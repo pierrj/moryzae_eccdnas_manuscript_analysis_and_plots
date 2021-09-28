@@ -1,0 +1,109 @@
+---
+title: "effectors_on_eccdnas_analysis"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread('G3.normalized.splitreadspergene'))
+
+effector_genes <- read.table('guy11_effector_protein_names', header=FALSE, sep='\t')
+
+effector = function(x, output) {
+  id = x[[1]]
+  if (is.element(id, effector_genes$V1)){
+    return(TRUE)
+  } else{
+    return(FALSE)
+  }
+}
+
+df <- df[df$V3 != 0,]
+
+df$V3 <- log(df$V3)
+
+df$V4 <- apply(df, 1, effector)
+
+
+colnames(df) <- c('gene','rpkm','srs', 'effector')
+
+```
+
+```{r}
+
+labs <- c("Other genes", "Predicted effectors")
+
+p <- ggplot(df, aes(x=effector, y=srs)) + geom_boxplot() + theme_classic() + ylab('Log 10 normalized \nencompassing splitreads') + xlab('') + scale_x_discrete(labels= labs)+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+
+
+p
+
+ggsave("effectors_on_eccdnas_boxplot.pdf", plot = p, width = 2, height = 4)
+
+
+```
+
+```{r}
+observed <- median(df$srs[df$effector == TRUE ]) - median(df$srs[df$effector == FALSE ])
+
+permutation = replicate(10000, {
+  sample_small <- df[sample(nrow(df), nrow(df[df$effector == TRUE,]) , replace = FALSE), ]
+  sample_large <- df[! rownames(df) %in% rownames(sample_small), ]
+  median(sample_small$srs)-median(sample_large$srs)
+})
+
+p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=0.01, colour="black", fill="white") + xlim(-1,1) + geom_vline(xintercept=observed)
+
+p
+
+p_value <- mean(permutation > observed)
+p_value
+
+```
+```{r}
+
+## length controlled version
+
+df_lengths <- data.frame(fread('guy11_fungap_out_12_28_20.gene_lengths'))
+colnames(df_lengths) <- c('gene', 'length')
+effector_genes <- lapply(effector_genes, as.character)
+df_lengths_siggenes <- df_lengths[df_lengths$gene %in% effector_genes$V1, ]
+d <- density(df_lengths_siggenes$length)
+density_function <- approxfun(d)
+probabilities <- density_function(df_lengths$length)
+
+## replace NAs with zeroes, these genes are larger than what would ever be expected in common genes
+probabilities[is.na(probabilities)] <- 0
+
+all_genes <- df_lengths$gene
+
+sampled_genes <- data.frame(replicate(10000, sample(all_genes, size = nrow(df_lengths_siggenes), replace = FALSE, 
+                                                    prob = probabilities)))
+
+
+
+get_median_difference <- function(x) {
+  x_not <- all_genes[!all_genes %in% x]
+  x_srs <- df[df$gene %in% x, ]
+  x_not_srs <- df[! df$gene %in% x, ]
+  return(median(x_srs$srs)-median(x_not_srs$srs))
+}
+
+
+x <- lapply(sampled_genes, get_median_difference)
+
+df_x <- t(data.frame(x))
+
+hist(df_x[,1])
+
+mean(df_x[,1] > observed)
+
+p <- ggplot() + aes(df_x[,1])+ geom_histogram(binwidth=0.01, colour="black", fill="white") + xlim(-1,1) + geom_vline(xintercept=observed)
+
+p
+
+```
+

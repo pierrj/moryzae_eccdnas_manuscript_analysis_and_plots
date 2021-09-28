@@ -1,0 +1,193 @@
+---
+title: "circos_plot_final_v2"
+output: html_document
+---
+
+```{r}
+library('circlize')
+library('ComplexHeatmap')
+library(data.table)
+
+```
+
+```{r}
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_rpkm <- data.frame(fread('rpkm'))
+df_rpkm$V4[df_rpkm$V4 == -Inf] <- -3
+
+df_ltr_ecc_density <- data.frame(fread('ltr_ecc_density'))
+df_ltr_ecc_density$V4 <- df_ltr_ecc_density$V4/max(df_ltr_ecc_density$V4)
+df_large_micro_ecc_density <- data.frame(fread('micro_dna_and_large_dna_density'))
+df_large_micro_ecc_density$V4 <- df_large_micro_ecc_density$V4/max(df_large_micro_ecc_density$V4)
+df_ltrs <- data.frame(fread('copia_and_gypsy_locs'))
+df_effectors <- data.frame(fread('effector_locs'))
+df_pav <- data.frame(fread('pav_per_gene'))
+df_gene_status <- data.frame(fread('gene_status'))
+
+```
+```{r}
+
+
+subset_chroms <- function(df, chrom_start, chrom_end) {
+    return(df[df$V1 >= chrom_start & df$V1 <= chrom_end,])
+   }
+
+
+```
+ 
+```{r}
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+col_fun_gene_status = colorRamp2(c(0, 1, 2), c("blue", "black", "red"))
+col_fun_ltr = colorRamp2(c(0, 0.5, 1), c("purple", "white", "#97572b"))
+
+
+lgd_ltr_locs = Legend(at = c("Copia elements", "Gypsy elements"), type = "lines", 
+    legend_gp = gpar(col = c('purple', '#97572b'), lwd = 2), title_position = "topleft", 
+    title = "A. LTR TE locations", direction='horizontal')
+lgd_ltr_eccs = Legend(at = c("Normalized junction split read count"), type = "points", 
+    legend_gp = gpar(col = c('red')), title_position = "topleft", 
+    title = "B. LTR-eccDNA Density", direction='horizontal')
+lgd_large_and_micro = Legend(at = c("Normalized junction split read count"), type = "points", 
+    legend_gp = gpar(col = c('black')), title_position = "topleft", 
+    title = "C. Large eccDNA and microDNA Density", direction='horizontal')
+lgd_pav = Legend(at = c("Retained in all genomes", "Lost in at least one genome"), type = "lines", 
+    legend_gp = gpar(col = c('black', 'orange'), lwd = 2), title_position = "topleft", 
+    title = "D. Presence absence variation", direction='horizontal')
+lgd_effectors = Legend(at = c("Location"), type = "lines", 
+    legend_gp = gpar(col = c('#09ab00'), lwd = 2), title_position = "topleft", 
+    title = "E. Predicted effectors", direction='horizontal')
+lgd_status = Legend(at = c("EccDNA-absent genes", "Other genes", "EccDNA-associated genes"), type = "lines", 
+    legend_gp = gpar(col = c('blue', 'black', 'red'), lwd = 2), title_position = "topleft", 
+    title = "F. Gene group", direction='horizontal')
+
+
+lgd_list_vertical = packLegend(lgd_ltr_locs, lgd_ltr_eccs, lgd_large_and_micro, lgd_pav, lgd_effectors, lgd_status,direction = "horizontal",
+                               max_width = unit(6.5, "in"),
+                               row_gap = unit(0,'in'),
+                               column_gap = unit(0.025, 'in'))
+
+pdf("circos_legend.pdf", width=6.5, height=1.5)
+draw(lgd_list_vertical)
+#, x = unit(4, "mm"), y = unit(4, "mm"), just = c("bottom")
+dev.off()
+
+```
+
+```{r}
+
+chrom_start = 1
+chrom_end = 20
+
+pdf("circos_first_scaffolds.pdf", width = 6.5, height = 6.5)
+
+circos.par('gap.degree' = c(1,1,30))
+circos.par('gap.degree' = c(rep(1,19),30))
+circos.par('start.degree' = 75)
+bp_per_degree <- sum(subset_chroms(df_genome,chrom_start,chrom_end)$V3)/360
+
+
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+col_fun_gene_status = colorRamp2(c(0, 1, 2), c("blue", "black", "red"))
+col_fun_ltr = colorRamp2(c(0, 0.5, 1), c("purple", "white", "#97572b"))
+
+circos.par("track.height" = 0.075)
+circos.genomicInitialize(subset_chroms(df_genome,chrom_start,chrom_end))
+
+circos.genomicTrackPlotRegion(subset_chroms(df_ltrs,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun_ltr(value), border = NA)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_ltr_ecc_density,chrom_start,chrom_end), ylim = c(min(df_ltr_ecc_density$V4), max(df_ltr_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col='red',lwd = 1, ...)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_large_micro_ecc_density,chrom_start,chrom_end), ylim = c(min(df_large_micro_ecc_density$V4), max(df_large_micro_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_effectors,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#09ab00', border = NA)
+})
+
+
+circos.genomicTrackPlotRegion(subset_chroms(df_pav,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun2(value), border = NA)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_gene_status,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun_gene_status(value), border = NA)
+})
+
+circos.text(-17*bp_per_degree, 0.75, "A", sector.index = 1,track.index = 2)
+circos.text(-17*bp_per_degree, 0.375*max(df_ltr_ecc_density$V4), "B", sector.index = 1,track.index = 3)
+circos.text(-17*bp_per_degree, 0.375*max(df_large_micro_ecc_density$V4), "C", sector.index = 1,track.index = 4)
+circos.text(-17*bp_per_degree, 0.75, "D", sector.index = 1,track.index = 5)
+circos.text(-17*bp_per_degree, 0.75, "E", sector.index = 1,track.index = 6)
+circos.text(-17*bp_per_degree, 0.75, "F", sector.index = 1,track.index = 7)
+
+dev.off()
+```
+
+```{r}
+chrom_start = 21
+chrom_end = 56
+
+pdf("circos_last_scaffolds.pdf",width = 6.5, height = 6.5)
+
+subset <- subset_chroms(df_genome,chrom_start,chrom_end)
+rownames(subset) <- seq(1,nrow(subset))
+colnames(subset) <- c('name', 'start', 'end')
+subset$name <- as.character(subset$name)
+
+circos.par("track.height" = 0.1)
+circos.par('gap.degree' = c(1,1,30))
+circos.par('gap.degree' = 1)
+
+circos.par('gap.degree' = c(rep(1,nrow(subset)-1),30))
+circos.par('start.degree' = 75)
+bp_per_degree <- sum(subset$end)/360
+
+
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+col_fun_gene_status = colorRamp2(c(0, 1, 2), c("blue", "black", "red"))
+col_fun_ltr = colorRamp2(c(0, 0.5, 1), c("purple", "white", "#97572b"))
+
+circos.par("track.height" = 0.075)
+circos.genomicInitialize(subset)
+
+circos.genomicTrackPlotRegion(subset_chroms(df_ltrs,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun_ltr(value), border = NA)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_ltr_ecc_density,chrom_start,chrom_end), ylim = c(min(df_ltr_ecc_density$V4), max(df_ltr_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col='red',lwd = 1, ...)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_large_micro_ecc_density,chrom_start,chrom_end), ylim = c(min(df_large_micro_ecc_density$V4), max(df_large_micro_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_effectors,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#09ab00', border = NA)
+})
+
+
+circos.genomicTrackPlotRegion(subset_chroms(df_pav,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun2(value), border = NA)
+})
+
+circos.genomicTrackPlotRegion(subset_chroms(df_gene_status,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun_gene_status(value), border = NA)
+})
+
+circos.text(-17*bp_per_degree, 0.75, "A", sector.index = 1,track.index = 2)
+circos.text(-17*bp_per_degree, 0.375*max(df_ltr_ecc_density$V4), "B", sector.index = 1,track.index = 3)
+circos.text(-17*bp_per_degree, 0.375*max(df_large_micro_ecc_density$V4), "C", sector.index = 1,track.index = 4)
+circos.text(-17*bp_per_degree, 0.75, "D", sector.index = 1,track.index = 5)
+circos.text(-17*bp_per_degree, 0.75, "E", sector.index = 1,track.index = 6)
+circos.text(-17*bp_per_degree, 0.75, "F", sector.index = 1,track.index = 7)
+
+dev.off()
+```
+ 
+ 

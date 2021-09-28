@@ -1,0 +1,108 @@
+---
+title: "gviz_practice"
+output: html_document
+---
+
+
+```{r}
+
+library(Gviz)
+library(GenomicRanges)
+library(data.table)
+library(ggplot2)
+options(ucscChromosomeNames=FALSE)
+
+
+```
+
+```{r}
+
+df_gff <- data.frame(fread('AvrPita3.gff3'))
+
+colnames(df_gff) <- c('chromosome',
+                      'source',
+                      'feature',
+                      'start',
+                      'end',
+                      'score',
+                      'strand',
+                      'other_score',
+                      'tag')
+
+df_gff <- df_gff[df_gff$feature != 'gene' & df_gff$feature != 'mRNA' & df_gff$feature != 'CDS',]
+
+
+
+df_eccs <- data.frame(fread('AvrPita3.G3_1B.eccs.bed'))
+
+colnames(df_eccs) <- c('chromosome',
+                      'start',
+                      'end')
+df_eccs <- df_eccs[,c(1,2,3)]
+
+
+colnames(df_eccs) <- c('chromosome',
+                      'start',
+                      'end')
+df_eccs <- df_eccs[,c(1,2,3)]
+
+genome_track <- GenomeAxisTrack()
+
+grtrack <- GeneRegionTrack(df_gff, name = "i", gene='gene_11229', transcript='gene_11229.t1',
+                            symbol = NULL, fontsize.group=30, 
+                           col='#000000', shape = "arrow", fill='#006400', fontcolor.group="#000000",
+                           fontcolor.title='#000000', rotation.title=0)
+
+ecc_track <- AnnotationTrack(df_eccs, name = 'ii', col = '#000000', fill='#000000', min.height=3, max.height=3,
+                              fontcolor.title='#000000', rotation.title=0)
+
+total_reads <- AlignmentsTrack(
+  'AvrPita3.G3_1B.totalreads.sorted.bam', isPaired = TRUE,
+           chromosome = 'MQOP01000016.1', type = "coverage", name = 'iii',
+  coverageHeight=1.4, col.coverage='#000000', showAxis=FALSE, col.axis='transparent',
+   fontcolor.title='#000000', rotation.title=0)
+
+
+split_reads <- AlignmentsTrack(
+  'junction_splitreads.AvrPita3.G3_1B.sorted.bam', isPaired = TRUE,
+           chromosome = 'MQOP01000016.1', type = "pileup", name = 'iv', lty.mates = 2, fill.reads='#F8766D', min.height=3.5, max.height=3.5,
+  col.mates='#000000', col.reads='#000000',
+   fontcolor.title='#000000', rotation.title=0)
+
+discordant_reads <- AlignmentsTrack(
+  'outwardfacing.AvrPita3.G3_1B.sorted.bam', isPaired = TRUE,
+           chromosome = 'MQOP01000016.1', type = "pileup", name = 'v', fill.reads='#00BFC4', min.height=3.5, max.height=3.5,
+            col.mates='#000000', col.reads='#000000',
+   fontcolor.title='#000000', rotation.title=0)
+
+pacbio_splitreads <- AlignmentsTrack(
+  'AvrPita3.G3_1B_pacbio_splitreads.sorted.bam', isPaired = TRUE,
+           chromosome = 'MQOP01000016.1', type = "pileup", name = 'vi',
+  stacking = 'pack', min.height=10, col.reads='#000000', min.height=7, max.height=7,
+   fontcolor.title='#000000', rotation.title=0)
+
+
+pdf("avrpita3_on_eccdnas.pdf", width=9, height=8)
+plotTracks(list(genome_track,
+                grtrack,
+                ecc_track,
+                total_reads,
+                split_reads,
+                discordant_reads,
+                pacbio_splitreads), sizes=c(0.4,0.125,0.25,0.25,2.1,1.75,0.3),
+           from = 368546-2200, to = 370280+550, showTitle=TRUE, showAxis=FALSE)
+dev.off()
+
+
+# pdf("test.pdf", width=9, height=20)
+# plotTracks(discordant_reads,from = 368546-2000, to = 370280+550)
+# dev.off()
+# 
+# pdf("test2.pdf", width=9, height=20)
+# plotTracks(split_reads,from = 368546-2000, to = 370280+550)
+# dev.off()
+# 
+# displayPars(split_reads)
+
+```
+

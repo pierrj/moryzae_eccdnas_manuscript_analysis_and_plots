@@ -1,0 +1,58 @@
+---
+title: "infected_v_control_comparison"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread("ecc_count_comparison_w_metadata_infected_v_control.txt"))
+
+colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large', 'all', 'read_count',
+                 'genome_size', 'coding_bp', 'copia_bp', 'gypsy_bp',
+                 'study', 'organism', 'tissue', 'genotype', 'treatment')
+
+# normalized ecc_count is log10 of count of all eccdnas per million reads per mega basepair
+df$normalized_ecc_count <- log10(df$all/(df$read_count/1000000)/(df$coding_bp/1000000))
+
+df$study <- sub("_", " ", df$study)
+df$organism <- sub("Rice_blast", "M. oryzae", df$organism)
+df$organism <- sub("Arabidopsis", "A. thaliana", df$organism)
+df$organism <- sub("Yeast", "S. cerevisiae", df$organism)
+df$organism <- sub("Human", "H. sapiens", df$organism)
+df$organism <- sub("Rice", "O. sativa", df$organism)
+df$organism <- sub("_", " ", df$organism)
+df$organism <- factor(df$organism, levels = c("M. oryzae", "H. sapiens", "S. cerevisiae", "A. thaliana", "O. sativa"))
+#df$symbol <- c(rep('default', 8), rep('default',9), rep('default',16), rep('alt1',16), rep('default',2), rep('alt1',2), rep('default',3), rep('alt1',2),
+#                    rep('alt2',2), rep('default',4), rep('alt1',4), rep('alt2',2), rep('alt3',2), rep('default',3), rep('alt1',3), rep('alt2',3), rep('alt3',3))
+
+```
+
+```{r}
+df$percent_copia_eccs <- df$copia / df$all
+df$percent_gypsy_eccs <- df$gypsy / df$all
+df$percent_micro_eccs <- df$micro / df$all
+df$percent_large_eccs <- df$large / df$all
+df$percent_coding_eccs <- df$genic / df$all
+df$percent_noncoding_eccs <- df$noncoding / df$all
+
+df$percent_copia_genome <- df$copia_bp / df$genome_size
+df$percent_gypsy_genome <- df$gypsy_bp / df$genome_size
+df$percent_coding_genome <- df$coding_bp / df$genome_size
+df$percent_noncoding_genome <- 1 - df$percent_coding_genome
+
+df$copia_circularome_v_genome <- df$percent_copia_eccs/df$percent_copia_genome
+df$gypsy_circularome_v_genome <- df$percent_gypsy_eccs/df$percent_gypsy_genome
+df$noncoding_circularome_v_genome <- df$percent_coding_eccs/df$percent_coding_genome
+df$coding_circularome_v_genome <- df$percent_noncoding_eccs/df$percent_noncoding_genome
+```
+
+```{r}
+p <- ggplot(df, aes(x=treatment, y=percent_gypsy_eccs)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study)) +
+  ylab("Percent copia eccDNAs in circularome") + xlab("")
+
+p
+```
+

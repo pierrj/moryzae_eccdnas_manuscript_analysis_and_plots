@@ -1,0 +1,151 @@
+---
+title: "never_vs_common_splitread_count"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(RColorBrewer)
+library(ggpubr)
+source("https://raw.githubusercontent.com/datavizpyr/data/master/half_flat_violinplot.R")
+library(ggforce)
+library(plyr)
+
+```
+
+```{r}
+
+df <- data.frame(fread('guy11_fungap_out_12_28_20.bed'))
+
+df_splitreads <- data.frame(fread('G3.normalized.splitreadspergene'))
+
+colnames(df) <- c('CHROMOSOME', 'start', 'end', 'gene')
+
+df$CHROMOSOME <- as.numeric(substring(df$CHROMOSOME, 11, 12))
+                          
+df$middle <- df$start + (df$end - df$start) * 0.5
+
+df$splitreads <- df_splitreads$V2
+
+df$status <- NA
+
+df$status[df$splitreads == 0] <- 'eccDNA-absent'
+
+
+n_common_genes <- floor(length(df$splitreads[df$splitreads != 0])/10)
+
+common_genes_cutoff <- sort(df$splitreads, decreasing=TRUE)[n_common_genes]
+
+df$status[df$splitreads >= common_genes_cutoff] <- 'eccDNA-associated'
+
+df$status[is.na(df$status)] <- 'Other genes'
+
+```
+
+```{r}
+
+df_chromsizes <- data.frame(fread('guy11_genome_baoetal2017.chromsizes'))
+
+colnames(df_chromsizes) <- c('chrom', 'size')
+df_chromsizes$chrom <- as.numeric(substring(df_chromsizes$chrom, 11, 12))
+
+
+v <- numeric()
+
+for (scaffold in 1:56){
+  v[scaffold] <- df_chromsizes$size[df_chromsizes$chrom == scaffold]
+}
+
+x <- numeric()
+
+for (scaffold in 1:56){
+  x[scaffold] <- sum(v[1:scaffold]) - v[scaffold]
+}
+
+
+f <- function(g) {
+ base <- as.numeric(g[5])
+ scaffold <- as.numeric(g[1])
+ base_total <- base + x[scaffold]
+ return(base_total)
+}
+
+df$BASE_TOTAL <- apply(df, 1, f)
+
+df$status <- factor(df$status, levels=c('eccDNA-absent', 'Other genes', 'eccDNA-associated'))
+
+df$no_status <- 'check'
+
+df <- df[df$status != 'eccDNA-absent',]
+
+```
+
+```{r}
+
+p1 <- ggplot(df, aes(x=no_status, y=log10(splitreads))) +
+  geom_violin() + 
+  geom_boxplot(outlier.shape = NA, width=0.1) + theme_classic() +
+    theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6),
+          axis.text.x = element_blank()) +
+    ylab('Log 10 Normalized Fully \nEncompassing Junction Split Reads') + xlab('Frequency')
+
+# p1
+
+p <- ggplot(df, aes(x=no_status, y=log10(splitreads))) +
+  geom_violin() + 
+  geom_boxplot(outlier.shape = NA, width=0.1) + theme_classic() +
+    theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6),
+          axis.text.x = element_blank()) +
+    ylab('Log 10 Normalized Fully \nEncompassing Junction Split Reads') + xlab('Frequency')
+
+p_build <- ggplot2::ggplot_build(p)$data[[1]]
+
+p_build <- transform(p_build,
+                     xminv = x - violinwidth * (x - xmin),
+                     xmaxv = x + violinwidth * (xmax - x))
+
+p_build <- rbind(plyr::arrange(transform(p_build, x = xminv), y),
+                 plyr::arrange(transform(p_build, x = xmaxv), -y))
+p_build$fill_group <- ifelse(p_build$y >= log10(common_genes_cutoff),'eccDNA-associated','Other genes')
+#This is necessary to ensure that instead of trying to draw
+# 3 polygons, we're telling ggplot to draw six polygons
+p_build$group1 <- with(p_build,interaction(factor(group),factor(fill_group)))
+
+p_fill <- ggplot() + 
+    geom_polygon(data = p_build,
+                 aes(x = x,y = y,group = group1,fill = fill_group)) + 
+    geom_boxplot(data = df, aes(x = 1, y=log10(splitreads)),outlier.shape=NA, width = 0.1)+
+    theme_classic()+
+      theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6),
+          axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+    scale_fill_manual(values = c ('#00BFC4','#F8766D')) +
+    ylab('Log 10 Normalized Fully \nEncompassing Junction Split Reads') + xlab('Frequency')
+  
+
+p_fill
+
+ggsave('never_v_common_violin.pdf', plot=p_fill, width=3.25, height=3.25, device = 'pdf')
+
+
+
+```
+
+```{r}
+
+p2 <- ggplot(df, aes(x=no_status, y=log10(splitreads))) +
+    geom_jitter(alpha=0.3, aes(color=status), position = position_jitternormal(sd_x=0.05, sd_y=0)) + theme_classic()+
+    theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6),
+          axis.text.x = element_blank()) +
+    ylab('Log 10 Normalized Fully \nEncompassing Junction Split Reads') + xlab('Genes')
+
+p2
+
+ggsave('never_v_common_dots.pdf', plot=p2, width=3.25, height=3.25, device = 'pdf')
+
+
+
+```
+

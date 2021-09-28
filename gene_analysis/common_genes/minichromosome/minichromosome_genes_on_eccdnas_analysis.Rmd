@@ -1,0 +1,63 @@
+---
+title: "minichromosome_genes_on_eccdnas_analysis"
+output: html_document
+---
+
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread('G3.normalized.splitreadspergene'))
+
+minichrom_genes <- read.table('all_genes_on_minichromosome', header=FALSE, sep='\t')
+
+minichrom = function(x, output) {
+  id = x[[1]]
+  if (is.element(id, minichrom_genes$V1)){
+    return(TRUE)
+  } else{
+    return(FALSE)
+  }
+}
+
+df <- df[df$V3 != 0,]
+
+df$V3 <- log10(df$V3)
+
+df$V4 <- apply(df, 1, minichrom)
+
+
+colnames(df) <- c('gene','rpkm','srs', 'minichrom')
+```
+
+```{r}
+labs <- c("Other genes", "Genes on \nmini-chromosomes")
+
+p <- ggplot(df, aes(x=minichrom, y=srs)) + geom_boxplot() + theme_classic() + ylab('Log 10 encompassing split \nread count') + xlab('') + scale_x_discrete(labels= labs)+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+
+
+p
+
+ggsave("minichromosome_genes_on_eccdnas_boxplot.pdf", plot = p, width = 2, height = 2)
+
+```
+
+```{r}
+observed <- median(df$srs[df$minichrom == TRUE ]) - median(df$srs[df$minichrom == FALSE ])
+
+permutation = replicate(10000, {
+  sample_small <- df[sample(nrow(df), nrow(df[df$minichrom == TRUE,]) , replace = FALSE), ]
+  sample_large <- df[! rownames(df) %in% rownames(sample_small), ]
+  median(sample_small$srs)-median(sample_large$srs)
+})
+
+p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=0.01, colour="black", fill="white") + xlim(-1,1) + geom_vline(xintercept=observed, size=1.5)
+
+p
+
+p_value <- mean(permutation > observed)
+p_value
+```
+

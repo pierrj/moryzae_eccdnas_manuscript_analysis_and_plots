@@ -1,0 +1,227 @@
+---
+title: "gene_portions_enrichment_plot"
+output: html_document
+---
+
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(tidyr)
+
+df <- data.frame(fread('gene_portions_full_table'))
+
+colnames(df) <- c("sample", "gene_portion",'observed_micro', 'expected_micro', 'observed_large', 'expected_large')
+```
+
+```{r}
+
+df$sample_full <- df$sample
+
+df <- separate(data=df, col=sample, into=c('study', 'organism', 'tissue', 'genotype','treatment'), sep ="=")
+
+
+```
+
+
+```{r}
+
+# log2 of observed over expected gives log2 fold enrichment
+
+df$log2_foldchange_micro <- log2(df$observed_micro/df$expected_micro)
+
+df$log2_foldchange_large <- log2(df$observed_large/df$expected_large)
+
+df$gene_portion <- factor(df$gene_portion, levels=c('exons', 'introns', 'upstream', 'downstream', 
+                                                    'five_prime_utr', 'three_prime_utr', 'cpg_islands', 'genic', 'intergenic'))
+
+```
+
+
+```{r}
+
+df$labels <- c(
+rep('S. cerevisiae deletion collection \n(Moller et al. 2015)',9),
+rep('S. cerevisiae deletion collection, zeocin treatment \n(Moller et al. 2015)',9),
+rep('S. cerevesiae GAP1circle \n(Moller et al. 2015)',9),
+rep('S. cerevesiae \n(Moller et al. 2015)',9),
+rep('A. thaliana flower epi12 mutant \n(Lanciano et al 2017)',9),
+rep('A. thaliana flower \n(Lanciano et al 2017)',9),
+rep('O. sativa callus \n(Lanciano et al 2017)',9),
+rep('O. sativa leaf \n(Lanciano et al 2017)',9),
+rep('O. sativa seed \n(Lanciano et al 2017)',9),
+rep('H. sapiens leukocyte \n(Moller et al 2018)',9),
+rep('H. sapiens muscle \n(Moller et al 2018)',9),
+rep('A. thaliana flower \n(Wang et al 2020)',9),
+rep('A. thaliana leaf \n(Wang et al 2020)',9),
+rep('A. thaliana root \n(Wang et al 2020)',9),
+rep('A. thaliana stem \n(Wang et al 2020)',9),
+rep('O. sativa leaf (this study)',9),
+rep('M. oryzae (this study)',9)
+)
+
+order <- c(
+'S. cerevesiae \n(Moller et al. 2015)',
+'S. cerevesiae GAP1circle \n(Moller et al. 2015)',
+'S. cerevisiae deletion collection \n(Moller et al. 2015)',
+'S. cerevisiae deletion collection, zeocin treatment \n(Moller et al. 2015)',
+'H. sapiens leukocyte \n(Moller et al 2018)',
+'H. sapiens muscle \n(Moller et al 2018)',
+'A. thaliana leaf \n(Wang et al 2020)',
+'A. thaliana root \n(Wang et al 2020)',
+'A. thaliana stem \n(Wang et al 2020)',
+'A. thaliana flower \n(Wang et al 2020)',
+'A. thaliana flower \n(Lanciano et al 2017)',
+'A. thaliana flower epi12 mutant \n(Lanciano et al 2017)',
+'O. sativa callus \n(Lanciano et al 2017)',
+'O. sativa seed \n(Lanciano et al 2017)',
+'O. sativa leaf \n(Lanciano et al 2017)',
+'O. sativa leaf (this study)',
+'M. oryzae (this study)'
+)
+
+df$labels <- factor(df$labels, levels=order)
+
+
+
+```
+
+
+```{r}
+
+p <- ggplot(data=df, aes(x=gene_portion, y=log2_foldchange_micro, fill=labels))+
+  geom_bar(stat='identity', position=position_dodge()) + 
+  geom_vline(xintercept = seq(1.5, 9, by = 1), color="black", size=.5, alpha=1)+
+  coord_flip()+
+  theme_classic()+
+  ylab('Log2 fold enrichment')+
+  scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
+                              "5'UTR", "3'UTR",'CpG islands',
+                              'Genic', 'Intergrenic'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6),
+        axis.title.y=element_blank())
+
+
+p
+
+ggsave('gene_portions_plot_full_micro.pdf', plot=p, width=6.5, height=6.5, device = 'pdf')
+
+
+```
+
+
+```{r}
+p <- ggplot(data=df, aes(x=gene_portion, y=log2_foldchange_large, fill=labels))+
+  geom_bar(stat='identity', position=position_dodge()) + 
+  geom_vline(xintercept = seq(1.5, 9, by = 1), color="black", size=.5, alpha=1)+
+  coord_flip()+
+  theme_classic()+
+  ylab('Log2 fold enrichment')+
+  scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
+                              "5'UTR", "3'UTR",'CpG islands',
+                              'Genic', 'Intergrenic'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6),
+        axis.title.y=element_blank())
+
+
+p
+
+ggsave('gene_portions_plot_full_large.pdf', plot=p, width=6.5, height=6.5, device = 'pdf')
+```
+
+
+```{r}
+
+df_human_muscle <- df[df$organism=="Human" & df$tissue!="Leukocyte",]
+
+df_ara_flower <- df[df$organism=="Arabidopsis" & df$tissue=="Flower" & df$study=="2020_Wang",]
+
+df_rice_leaf <- df[df$organism=="Rice" & df$tissue=="Leaf" & df$study=="2017_Lanciano",]
+
+df_riceblast <- df[df$organism=="Rice_blast",]
+
+df_representative <- rbind(df_human_muscle, df_ara_flower, df_rice_leaf, df_riceblast)
+
+
+  
+```
+
+
+
+
+```{r}
+
+p <- ggplot(data=df_representative, aes(x=gene_portion, y=log2_foldchange_micro, fill=labels))+
+  geom_bar(stat='identity', position=position_dodge()) + 
+  geom_vline(xintercept = seq(1.5, 9, by = 1), color="black", size=.5, alpha=1)+
+  coord_flip()+
+  theme_classic()+
+  ylab('Log2 fold enrichment')+
+  scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
+                              "5'UTR", "3'UTR",'CpG islands',
+                              'Genic', 'Intergrenic'))+
+      guides(fill=guide_legend(nrow=2,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6),
+        axis.title.y=element_blank(), legend.position='bottom')
+
+
+
+p
+
+ggsave('gene_portions_plot_representative_micro.pdf', plot=p, width=3.25, height=3.25, device = 'pdf')
+
+
+```
+
+```{r}
+
+top <- df[df$organism=="Rice_blast",c(6,12)]
+
+colnames(top) <- c('gene_portion', 'log2_foldchange')
+
+top$ecc <- "micro"
+
+bottom <- df[df$organism=="Rice_blast",c(6,13)]
+
+colnames(bottom) <- c('gene_portion', 'log2_foldchange')
+
+bottom$ecc <- "large"
+
+df_riceblast_large_v_micro <- rbind(top, bottom)
+
+
+
+df_riceblast_large_v_micro$labels <- c(
+rep('MicroDNAs',9),
+rep('Large eccDNAs',9)
+)
+
+order <- c(
+'MicroDNAs',
+'Large eccDNAs'
+)
+
+df_riceblast_large_v_micro$labels <- factor(df_riceblast_large_v_micro$labels, levels=order)
+
+```
+
+```{r}
+
+p <- ggplot(data=df_riceblast_large_v_micro, aes(x=gene_portion, y=log2_foldchange, fill=labels))+
+  geom_bar(stat='identity', position=position_dodge())+ 
+  geom_vline(xintercept = seq(1.5, 9, by = 1), color="black", size=.25, alpha=1)+
+  coord_flip()+
+  theme_classic()+
+  ylab('Log2 fold enrichment')+
+  scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
+                              "5'UTR", "3'UTR",'CpG islands',
+                              'Genic', 'Intergrenic'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6),
+        axis.title.y=element_blank(), legend.position='bottom')
+
+p
+
+ggsave('gene_portions_plot_large_v_micro.pdf', plot=p, width=3.25, height=3.25, device = 'pdf')
+
+```
+

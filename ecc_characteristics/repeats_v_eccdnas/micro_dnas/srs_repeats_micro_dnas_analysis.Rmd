@@ -1,0 +1,91 @@
+---
+title: "srs_repeats_micro_dnas_analysis"
+output: html_document
+---
+
+
+
+```{r}
+
+library(data.table)
+library(ggplot2)
+library(scales)
+
+df_repeatsper100kb <- data.frame(fread('G3.SRsvsrepeatsper100kb'))
+
+colnames(df_repeatsper100kb) <- c("scaffold", "start", "end", "repeat_count", "srs")
+
+df_repeatsper100kb <- df_repeatsper100kb[df_repeatsper100kb$srs != 0 & df_repeatsper100kb$repeat_count != 0,]
+
+df_repeatsper100kb$srs <- log10(df_repeatsper100kb$srs)
+
+
+p <- ggplot(df_repeatsper100kb, aes(x=repeat_count, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Repeats per 100kb bin",
+       y="Log10 split reads per 100kb bin") + theme_classic()
+
+p
+
+ggsave("srs_repeats_micro_dnas_analysis_repeatsper100kb_plot.pdf", plot = p, width = 6, height = 4)
+```
+
+
+```{r}
+cor.test(df_repeatsper100kb$repeat_count, df_repeatsper100kb$srs, method=c("pearson"))
+
+```
+
+```{r}
+summary(lm(df_repeatsper100kb$srs ~ df_repeatsper100kb$repeat_count))
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(df_repeatsper100kb$srs ~ df_repeatsper100kb$repeat_count))
+
+pdf(file = "srs_repeats_micro_dnas_analysis_repeatsper100kb_diagnostics.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_repeatsper100kb$srs ~ df_repeatsper100kb$repeat_count))
+dev.off()
+```
+
+
+```{r}
+df_repeatsperscaffold <- data.frame(fread('G3.SRsvsrepeatsper100kbperscaffold'))
+
+colnames(df_repeatsperscaffold) <- c("scaffold", "repeat_count", "srs")
+
+df_repeatsperscaffold <- df_repeatsperscaffold[df_repeatsperscaffold$srs != 0 & df_repeatsperscaffold$repeat_count != 0,]
+
+df_repeatsperscaffold$srs <- log10(df_repeatsperscaffold$srs)
+
+p <- ggplot(df_repeatsperscaffold, aes(x=repeat_count, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Repeats per scaffold",
+       y="Split reads per scaffold") + theme_classic()
+
+p
+
+ggsave("srs_repeats_micro_dnas_analysis_repeatsper100kbperscaffold_plot.pdf", plot = p, width = 6, height = 4)
+```
+
+```{r}
+cor.test(df_repeatsperscaffold$repeat_count, df_repeatsperscaffold$srs, method=c("pearson"))
+
+```
+
+
+```{r}
+summary(lm(df_repeatsperscaffold$srs ~ df_repeatsperscaffold$repeat_count))
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(df_repeatsperscaffold$srs ~ df_repeatsperscaffold$repeat_count))
+
+pdf(file = "srs_repeats_micro_dnas_analysis_repeatsper100kbperscaffold_diagnostics.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_repeatsperscaffold$srs ~ df_repeatsperscaffold$repeat_count))
+dev.off()
+```

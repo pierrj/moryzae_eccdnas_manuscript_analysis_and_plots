@@ -1,0 +1,60 @@
+---
+title: "boxplot_ltr_reads"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread("te_eccs_per_sample.txt"))
+
+colnames(df) <- c('sample', 'te', 'genome_size', 'total_reads',
+                  'te_bp', 'reads_per_te')
+
+
+df$percent_per_te <- df$reads_per_te/df$total_reads
+
+df$percent_genome_per_te <- df$te_bp/df$genome_size
+
+df$percent_per_te_normalized <- df$percent_per_te/df$percent_genome_per_te
+
+df
+
+```
+
+```{r}
+
+
+p <- ggplot(df, aes(x=te, y=percent_per_te)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+ggsave("copia_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
+
+```
+
+```{r}
+
+p <- ggplot(df, aes(x=te, y=percent_genome_per_te)) + 
+  geom_bar(stat='identity') + theme_classic()+
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+
+```
+
+```{r}
+
+p <- ggplot(df, aes(x=te, y=percent_per_te_normalized)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+
+```
+

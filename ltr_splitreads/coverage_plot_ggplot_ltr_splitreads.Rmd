@@ -1,0 +1,205 @@
+---
+title: "coverage_plot_ggplot"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(RColorBrewer)
+library(ggpubr)
+
+```
+
+```{r}
+
+df <- data.frame(fread('G3.normalized_binned.filtered.renamed.withbinnames.table'))
+
+
+tes_vector <- c('GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'copia1')
+
+df_te_snps <- data.frame()
+
+for (te in tes_vector) {
+  df_snps <- data.frame()
+  SNP <- readLines(paste(te,'.snps.tohighlight',sep=''))
+  df_snps <- as.data.frame(SNP)
+  df_snps$TE <- te
+  df_te_snps <- rbind(df_te_snps, df_snps)
+}
+
+# drop duplicates
+df_te_snps <- unique( df_te_snps[ ,1:2 ] )
+
+# remove snps with multiple elements completely
+df_te_snps <- df_te_snps[!(duplicated(df_te_snps$SNP) | duplicated(df_te_snps$SNP, fromLast = TRUE)),]
+  
+
+df <- merge(x=df, y=df_te_snps, by.x='SNP', by.y='SNP', all = TRUE)
+df <- df[order(df$CHROMOSOME, df$BASE),]
+df$TE[is.na(df$TE) & (df$CHROMOSOME %% 2 == 1)] <- 'None1'
+df$TE[is.na(df$TE) & (df$CHROMOSOME %% 2 == 0)] <- 'None2'
+
+```
+
+```{r}
+
+v <- numeric()
+
+for (scaffold in 1:56){
+  v[scaffold] <- max(df$BASE[df$CHROMOSOME == scaffold])
+}
+
+x <- numeric()
+
+for (scaffold in 1:56){
+  x[scaffold] <- sum(v[1:scaffold]) - v[scaffold]
+}
+
+
+f <- function(g) {
+ base <- as.numeric(g[3])
+ scaffold <- as.numeric(g[2])
+ base_total <- base + x[scaffold]
+ return(base_total)
+}
+
+df$BASE_TOTAL <- apply(df, 1, f)
+
+df$TE <- factor(df$TE, levels=c('None1', 'None2', 'GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'copia1'))
+
+df <- df[df$COUNT != 0,]
+
+```
+
+```{r}
+brewer.pal(n = 8, name = "Dark2")
+```
+
+
+```{r}
+
+start_subset <- 1
+
+end_subset <- 5
+
+end_subset_first_few <- 5
+
+count <- end_subset - start_subset + 1
+
+ticks <- numeric()
+
+for (scaffold in start_subset:end_subset){
+  ticks <- c(ticks, v[scaffold]*0.5 + (sum(v[start_subset:scaffold]) - v[scaffold]))
+  ticks <- c(ticks, v[scaffold]*1 + (sum(v[start_subset:scaffold]) - v[scaffold]))
+}
+
+labs <- rep(start_subset:end_subset, each=2)
+
+df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
+
+p1 <- ggplot() + 
+  geom_point(data = df_subset[df_subset$TE != 'None1' & df_subset$TE != 'None2',], aes(x=BASE_TOTAL, y=COUNT,color=TE), size=0.1)+
+  scale_color_manual(values=c('#03254c', "#2a9df4", "#7570B3", "#E7298A", "#66A61E", "#E6AB02"))+
+  scale_x_continuous(labels=labs, breaks = ticks,
+                     limits = c((sum(v[1:start_subset]) - v[start_subset]),
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
+  theme_classic() + xlab('Scaffold') +
+  ylim(0, max(df$COUNT)) +
+  theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+
+  theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+
+  ylab('Normalized junction \nsplit read count')+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6)) + guides(colour = guide_legend(override.aes = list(size=2)))
+
+# should be 5000 for high res
+ggsave('ltr_test.tiff', plot=p1, width=6.5, height=2, device = 'tiff', dpi = 1000)
+
+```
+
+
+```{r}
+start_subset <- 6
+
+end_subset <- 56
+
+count <- end_subset - start_subset + 1
+
+ticks <- numeric()
+
+for (scaffold in start_subset:end_subset){
+  if (scaffold <= 15) {
+    ticks <- c(ticks, v[scaffold]*0.5 + (sum(v[start_subset:scaffold]) - v[scaffold]))
+    } else if (scaffold == 20) {
+      ticks <- c(ticks, v[scaffold]*0.5 + (sum(v[start_subset:scaffold]) - v[scaffold]))
+    } 
+  ticks <- c(ticks, v[scaffold]*1 + (sum(v[start_subset:scaffold]) - v[scaffold]))
+}
+
+ticks <- ticks + sum(v[1:end_subset_first_few])
+
+labs <- character()
+
+for (scaffold in start_subset:end_subset){
+  if (scaffold <= 15) {
+    labs <- c(labs, scaffold)
+    } else if (scaffold == 20) {
+      labs <- c(labs,scaffold)
+    } 
+  labs <- c(labs, scaffold)
+}
+
+#tick colors
+
+tick_colors <- character()
+label_colors <- character()
+
+for (scaffold in start_subset:end_subset){
+  if (scaffold <= 15) {
+    tick_colors <- c(tick_colors, 'transparent', 'black')
+    } else if (scaffold == 20) {
+      tick_colors <- c(tick_colors, 'transparent', 'black')
+    } else {
+      tick_colors <- c(tick_colors, 'black')
+    }
+  if (scaffold <= 15) {
+    label_colors <- c(label_colors, 'black', 'transparent')
+    } else if (scaffold == 20) {
+      label_colors <- c(label_colors, 'black', 'transparent')
+    } else {
+      label_colors <- c(label_colors, 'transparent')
+    }
+}
+
+
+
+df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
+
+p2 <- ggplot() + 
+  geom_point(data = df_subset[df_subset$TE != 'None1' & df_subset$TE != 'None2',], aes(x=BASE_TOTAL, y=COUNT,color=TE), size=0.1)+
+  scale_color_manual(values=c('#03254c', "#2a9df4", "#7570B3", "#E7298A", "#66A61E", "#E6AB02"))+
+  scale_x_continuous(labels=labs, breaks = ticks,
+                     limits = c((sum(v[1:start_subset]) - v[start_subset]),
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
+  theme_classic() + xlab('Scaffold') +
+  ylim(0, max(df$COUNT)) +
+  theme(axis.text.x = element_text(colour=label_colors))+
+  theme(axis.ticks.x = element_line(colour=tick_colors))+
+  ylab('Normalized junction \nsplit read count')+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6))+ guides(colour = guide_legend(override.aes = list(size=2)))
+
+# should be 5000 for high res
+ggsave('ltr_test2.tiff', plot=p2, width=6.5, height=2, device = 'tiff', dpi = 1000)
+
+```
+
+
+```{r}
+
+both <- ggarrange(p1,p2, ncol=1, nrow=2, common.legend = TRUE, legend='bottom')
+
+ggsave('ltr_test3.tiff', plot=both, width=6.5, height=3.5, device = 'tiff', dpi = 1000)
+
+ggsave('ltr_coverage_plot.pdf', plot=both, width=6.5, height=3.5, device = 'pdf')
+
+```
+

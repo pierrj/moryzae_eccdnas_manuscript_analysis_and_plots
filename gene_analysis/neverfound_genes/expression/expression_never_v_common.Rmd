@@ -1,0 +1,49 @@
+---
+title: "expression_never_v_common"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread('common_v_never_expression'))
+
+df$V2 <- log10(df$V2)
+
+colnames(df) <- c('gene','rpkm','common_or_never')
+
+```
+
+```{r}
+labs <- c("Commonly found \ngenes", "Never found \ngenes")
+
+p <- ggplot(df, aes(x=common_or_never, y=rpkm)) + geom_boxplot() + theme_classic() + ylab('Log 10 RPKM') + xlab('') + scale_x_discrete(labels= labs)+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+
+
+p
+
+ggsave("expression_never_v_common_boxplot.pdf", plot = p, width = 2, height = 2)
+
+```
+
+```{r}
+
+observed <- median(df$rpkm[df$common_or_never == "never" ]) - median(df$rpkm[df$common_or_never == "common" ])
+
+permutation = replicate(10000, {
+  sample_small <- df[sample(nrow(df), nrow(df[df$common_or_never == "never",]) , replace = FALSE), ]
+  sample_large <- df[! rownames(df) %in% rownames(sample_small), ]
+  median(sample_small$rpkm)-median(sample_large$rpkm)
+})
+
+p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=0.01, colour="black", fill="white") + xlim(-1,1) + geom_vline(xintercept=observed)
+
+p
+
+p_value <- mean(permutation > observed)
+p_value
+
+```
+

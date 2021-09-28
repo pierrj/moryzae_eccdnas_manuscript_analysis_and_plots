@@ -1,0 +1,150 @@
+---
+title: "ecc_caller_v_moller_2018"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread('ecc_caller_v_moller_2018_out_table.txt'))
+
+colnames(df) <- c('sample', 'tissue', 'moller_2018_eccs_count', 'ecc_caller_eccs_count', 'ecc_caller_eccs_w_overlap_count', 
+            'ecc_caller_eccs_highcoverage_count', 'ecc_caller_eccs_highcoverage_w_overlap_count',
+            'ecc_caller_uniq_eccs_count', 'ecc_caller_uniq_eccs_w_overlap_count')
+
+
+```
+
+```{r}
+
+df$percent_total_overlap <- df$ecc_caller_eccs_w_overlap_count/df$ecc_caller_eccs_count*100
+df$percent_high_overlap <- df$ecc_caller_eccs_highcoverage_w_overlap_count/df$ecc_caller_eccs_highcoverage_count*100
+df$percent_uniq_overlap <- df$ecc_caller_uniq_eccs_w_overlap_count/df$ecc_caller_uniq_eccs_count*100
+
+df_percent_overlap <- data.frame(
+  rep(df$tissue,3),
+  c(rep('All', 32), rep('High coverage',32), rep('Uniquely mapped',32)),
+  c(df$percent_total_overlap, df$percent_high_overlap, df$percent_uniq_overlap)
+)
+
+colnames(df_percent_overlap) <- c('tissue', 'type', 'percent')
+
+df_percent_overlap$tissue <- (
+  rep(c(rep('Muscle',16),
+    rep('Leukocytes',16)),3)
+)
+
+
+
+```
+
+```{r}
+
+mean(df_percent_overlap$percent[df_percent_overlap$type == 'All'])
+mean(df_percent_overlap$percent[df_percent_overlap$type == 'High coverage'])
+
+mean(df_percent_overlap$percent[df_percent_overlap$type == 'Uniquely mapped'])
+
+
+```
+
+
+```{r}
+
+p <- ggplot(df_percent_overlap, aes(x=type, y=percent)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=tissue))+
+  scale_y_continuous(limits=c(0,100.01))+
+  ylab("Percent overlap") + xlab("") + 
+    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position = 'bottom')
+
+
+p
+
+ggsave("ecc_caller_v_moller_percent_overlap.pdf", plot = p, width = 6.5, height = 3.5)
+
+
+```
+
+```{r}
+
+df_count_muscle <- data.frame(
+  df$sample[df$tissue == 'muscle'],
+  c(df$moller_2018_eccs_count[df$tissue == 'muscle'],
+  df$ecc_caller_eccs_count[df$tissue == 'muscle']),
+  c(rep('Moller et al 2018',16), rep('This Study', 16))
+)
+
+colnames(df_count_muscle) <- c('sample', 'count', 'pipeline')
+
+
+# df_count_muscle <- data.frame(
+#   df$sample[df$tissue == 'muscle'],
+#   df$moller_2018_eccs_count[df$tissue == 'muscle'],
+#   df$ecc_caller_eccs_count[df$tissue == 'muscle']
+# )
+# 
+# colnames(df_count_muscle) <- c('sample', 'moller','ecc_caller')
+
+
+df_count_leukocytes <- data.frame(
+  df$sample[df$tissue == 'leukocytes'],
+  c(df$moller_2018_eccs_count[df$tissue == 'leukocytes'],
+  df$ecc_caller_eccs_count[df$tissue == 'leukocytes']),
+  c(rep('Moller et al 2018',16), rep('This Study', 16))
+)
+
+colnames(df_count_leukocytes) <- c('sample', 'count', 'pipeline')
+
+# df_count_leukocytes <- data.frame(
+#   df$sample[df$tissue == 'leukocytes'],
+#   df$moller_2018_eccs_count[df$tissue == 'leukocytes'],
+#   df$ecc_caller_eccs_count[df$tissue == 'leukocytes']
+# )
+# 
+# colnames(df_count_leukocytes) <- c('sample', 'moller','ecc_caller')
+
+
+```
+
+```{r}
+
+p1 <- ggplot(data=df_count_muscle, aes(x=sample, y=count, fill=pipeline))+
+  geom_bar(stat='identity', position=position_dodge())+
+  theme_classic()+
+  ylab('EccDNA forming regions')+
+  xlab('Muscle')+
+  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+p1
+
+ggsave("ecc_caller_v_moller_muscle_counts.pdf", plot = p1, width = 3.25, height = 3.5)
+
+
+```
+
+
+```{r}
+
+p2 <- ggplot(data=df_count_leukocytes, aes(x=sample, y=count, fill=pipeline))+
+  geom_bar(stat='identity', position=position_dodge())+
+  theme_classic()+
+  ylab('EccDNA forming regions')+
+  xlab('Leukocytes')+
+  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+p2
+
+ggsave("ecc_caller_v_moller_leukocytes_counts.pdf", plot = p2, width = 3.25, height = 3.5)
+
+
+```
+
+```{r}
+both <- ggarrange(p1,p2, ncol=2, nrow=1, common.legend = TRUE, legend='bottom')
+
+ggsave('ecc_caller_v_moller_counts.pdf', plot=both, width=6.5, height=3.5, device = 'pdf')
+```
+

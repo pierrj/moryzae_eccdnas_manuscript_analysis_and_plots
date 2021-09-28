@@ -1,0 +1,8 @@
+# Ignore everything
+*
+# Don't ignore directories and subdirectories, gitignore and any .Rmd files
+!**/
+!.gitignore
+!**/*.Rmd
+!**/*.R
+!**/*.ipynb

@@ -1,0 +1,91 @@
+---
+title: "table_making"
+output: html_document
+---
+
+```{r}
+library(gt)
+```
+
+```{r}
+
+df <- data.frame(t(data.frame(c(2660, 1591),
+                 c(842, 697),
+                 c(2438, 1409))))
+
+colnames(df) <- c('This study', 'Overlapping with Moller et al 2018')
+
+df$rownames <- c('No lowq', 'No lowq, more than 10 split reads', 'No lowq, uniquely mapped only')
+
+gt <- gt(df, rowname_col = 'rownames')
+
+gt <- cols_align(gt, align = 'center', columns = everything())
+
+gt <- cols_width(gt, everything() ~ px(150))
+
+gtsave(gt, 'ecc_caller_v_moller_et_al.png')
+
+```
+
+```{r}
+
+df <- data.frame(t(data.frame(c(222477896, 12, 195, 195/222477896*1000000),
+                 c(73760888, 15, 210, 210/73760888*1000000),
+                 c(168585640, 5, 66, 66/168585640*1000000))))
+
+sigfigs <- function(x) {
+  sigfig <- formatC(signif(x,digits=4), digits=4,format="fg", flag="#")
+ return(sigfig)
+}
+
+df[] <- lapply(df, sigfigs)
+
+colnames(df) <- c('Read count','Called high quality eccDNAs', 'Called high quality split reads', 'False positives per million reads')
+
+df$rownames <- c('ERR2660591', 'ERR5060418', 'SRR11528297')
+
+gt <- gt(df, rowname_col = 'rownames')
+
+gt <- cols_width(gt, everything() ~ px(150))
+
+gt <- tab_stubhead(gt, 'Accessions')
+
+gt <- cols_align(gt, align = 'center')
+
+
+
+gtsave(gt, 'ecc_caller_on_wgs_data.png')
+
+```
+
+```{r}
+
+df <- data.frame(t(data.frame(c('Plasmid Mini AX (A&A Biotechnology)','Plasmid Mini AX (A&A Biotechnology)',
+                                'Plasmid-Safe ATP-dependent DNase (Epicentre); NotI (Fermentas)', 'REPLI-g Mini Kit (Qiagen)' ),
+                 c('Plant DNeasy mini kit (Qiagen)', 'Geneclean kit (MPBio)',
+                   'Plasmid-Safe ATP-dependent DNase, (Epicentre)', 'Illustra TempliPhi kit (GE Healthcare)'),
+                 c('Plasmid Mini AX (A&A Biotechnology)', 'Plasmid Mini AX (A&A Biotechnology)', 
+                   'Plasmid-Safe ATP-dependent DNase (Epicentre); MssI (Thermo Scientific)', 'REPLI-g Midi Kit (Qiagen)'),
+                 c('Plant DNeasy mini kit (Qiagen)', 'Geneclean kit (MPBio)',
+                   'Plasmid-Safe ATP-dependent DNase (Epicentre)', 'REPLI-g Mini Kit (Qiagen)'),
+                 c('SDS and KAc extraction', 'DNA Clean and Concentrator-5 Kit (Zymo Research)',
+                   'Plasmid-Safe ATP-dependent DNase (Epicentre)', 'Illustra TempliPhi kit (GE Healthcare)'),
+                 c('Plant DNeasy mini kit (Qiagen)', 'DNA Clean and Concentrator-5 Kit (Zymo Research)',
+                   'Plasmid-Safe ATP-dependent DNase (Epicentre)', 'Illustra TempliPhi kit (GE Healthcare)'))))
+
+
+colnames(df) <- c('DNA extraction', 'Column purification', 'Linear DNA degradation', 'Circular DNA amplification')
+
+df$rownames <- c('Moller et al 2015', 'Lanciano et al 2017', 'Moller et al 2018', 'Wang et al 2021', 'This Study (Magnaporthe oryzae)', 'This Study (Oryza sativa)')
+
+gt <- gt(df, rowname_col = 'rownames')
+
+gt <- cols_align(gt, align = 'center', columns = everything())
+
+gt <- cols_width(gt, everything() ~ px(150))
+
+gt <- tab_stubhead(gt, 'Study')
+
+gtsave(gt, 'ecc_datasets_metadata.png')
+
+```

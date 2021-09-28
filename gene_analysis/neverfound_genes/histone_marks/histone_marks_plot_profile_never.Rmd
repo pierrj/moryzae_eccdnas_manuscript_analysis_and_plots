@@ -1,0 +1,111 @@
+---
+title: "histone_marks_never_v_common"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+```
+
+```{r}
+df_read <- t(data.frame(fread("gc.tab")))
+
+df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
+                  val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], df_read[3:nrow(df_read),5]),
+                  label=c(rep('Genome baseline',160), rep('All genes',160), rep('EccDNA-associated genes',160), rep('EccDNA-absent genes',160)))
+
+df$bin <- as.numeric(as.character(df$bin))
+df$val <- as.numeric(as.character(df$val))
+
+df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "Methylated genes", "Nonmethylated genes",
+                                            "Acetylated genes", "Nonacetylated genes",
+                                            "EccDNA-associated genes", "EccDNA-absent genes"))
+
+p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
+  scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('GC content')  +
+  guides(color=guide_legend(nrow=2,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
+  theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
+
+p
+
+ggsave('never_v_common_gc.pdf', plot=p, width=3.25, height=2)
+
+```
+
+```{r}
+df_read <- t(data.frame(fread("H3K27me3_1.tab")))
+
+df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
+                  val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], 
+                        df_read[3:nrow(df_read),5], df_read[3:nrow(df_read),6], df_read[3:nrow(df_read),7]),
+                  label=c(rep('Genome baseline',160), rep('All genes',160), rep('EccDNA-associated genes',160), rep('EccDNA-absent genes',160),
+                          rep('Methylated genes',160), rep('Nonmethylated genes',160)))
+
+df$bin <- as.numeric(as.character(df$bin))
+df$val <- as.numeric(as.character(df$val))
+
+df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "Methylated genes", "Nonmethylated genes",
+                                            "Acetylated genes", "Nonacetylated genes",
+                                            "EccDNA-associated genes", "EccDNA-absent genes"))
+
+p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
+  scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27me3')  +
+  guides(color=guide_legend(nrow=3,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
+  theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
+
+p
+
+ggsave('never_v_common_h3k27me3.pdf', plot=p, width=3.25, height=2)
+
+```
+
+```{r}
+df_read <- t(data.frame(fread("H3K36me3_1.tab")))
+
+df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4],df_read[3:nrow(df_read),5]),
+                  label=c(rep('Genome baseline',160), rep('All genes',160), rep('EccDNA-associated genes',160), rep('EccDNA-absent genes',160)))
+
+df$bin <- as.numeric(as.character(df$bin))
+df$val <- as.numeric(as.character(df$val))
+
+df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "Methylated genes", "Nonmethylated genes",
+                                            "Acetylated genes", "Nonacetylated genes",
+                                            "EccDNA-associated genes", "EccDNA-absent genes"))
+
+p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
+  scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K36me3')  +
+  guides(color=guide_legend(nrow=2,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
+  theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
+
+p
+
+ggsave('never_v_common_h3k36me3.pdf', plot=p, width=3.25, height=2)
+```
+
+```{r}
+df_read <- t(data.frame(fread("H3K27ac_1.tab")))
+
+df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
+                  val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], 
+                        df_read[3:nrow(df_read),5], df_read[3:nrow(df_read),6], df_read[3:nrow(df_read),7]),
+                  label=c(rep('Genome baseline',160), rep('All genes',160), rep('EccDNA-associated genes',160), rep('EccDNA-absent genes',160),
+                          rep('Acetylated genes',160), rep('Nonacetylated genes',160)))
+
+df$bin <- as.numeric(as.character(df$bin))
+df$val <- as.numeric(as.character(df$val))
+
+df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "Methylated genes", "Nonmethylated genes",
+                                            "Acetylated genes", "Nonacetylated genes",
+                                            "EccDNA-associated genes", "EccDNA-absent genes"))
+
+p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
+  scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27ac')  +
+  guides(color=guide_legend(nrow=3,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
+  theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
+
+p
+
+ggsave('never_v_common_h3k27ac.pdf', plot=p, width=3.25, height=2)
+```
+

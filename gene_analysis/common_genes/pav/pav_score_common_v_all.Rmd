@@ -1,0 +1,201 @@
+---
+title: "pav_score_common_v_all"
+output: html_document
+---
+
+
+```{r}
+
+library(data.table)
+library(ResourceSelection)
+library(ggplot2)
+
+df <- data.frame(fread("pav_scores_per_gene"))
+
+common_names <- readLines("G3.common.genes")
+
+never_names <- readLines("G3.neverfound.genes")
+
+
+```
+
+
+```{r}
+
+vector <- vector()
+
+for(i in 1:nrow(df)) {
+  if (df[i,][[1]] %in% common_names){
+    vector <- c(vector, 'common')
+  } else if (df[i,][[1]] %in% never_names){
+    vector <- c(vector, 'never')
+  } else {
+    vector <- c(vector, 'sometimes')
+  }
+}
+
+df$V3 <- vector
+
+df$V4 <- df$V2 == 162
+
+colnames(df) <- c('gene', 'pav_score', 'eccdna_occurence', 'kept_in_all_genomes')
+
+```
+
+
+```{r}
+
+percent_kept_never <- mean(df$kept_in_all_genomes[df$eccdna_occurence == 'never'])
+percent_lost_never <- 1-percent_kept_never
+
+percent_kept_sometimes <- mean(df$kept_in_all_genomes[df$eccdna_occurence == 'sometimes'])
+percent_lost_sometimes <- 1-percent_kept_sometimes
+
+percent_kept_common <- mean(df$kept_in_all_genomes[df$eccdna_occurence == 'common'])
+percent_lost_common <- 1-percent_kept_common
+ 
+
+vector_1 <- c(percent_lost_never,percent_kept_never, percent_lost_sometimes,percent_kept_sometimes, percent_lost_common, percent_kept_common)
+vector_2 <- c("M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes",
+              "M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes",
+              "M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes")
+vector_3 <- c("EccDNA-absent genes", "EccDNA-absent genes",
+              "Other genes", "Other genes",
+              "EccDNA-associated genes", "EccDNA-associated genes")
+
+plot_df <- data.frame(vector_1,vector_2,vector_3)
+
+plot_df$vector_2 <- factor(plot_df$vector_2,levels = c("M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes"))
+
+plot_df$vector_3 <- factor(plot_df$vector_3,levels = c("EccDNA-associated genes", "Other genes", "EccDNA-absent genes"))
+
+label_vector_1 <- c( nrow(df[df$eccdna_occurence == 'never' & df$kept_in_all_genomes == TRUE,]), nrow(df[df$eccdna_occurence == 'never' & df$kept_in_all_genomes == FALSE,]),
+                     nrow(df[df$eccdna_occurence == 'sometimes' & df$kept_in_all_genomes == TRUE,]), nrow(df[df$eccdna_occurence == 'sometimes' & df$kept_in_all_genomes == FALSE,]),
+                     nrow(df[df$eccdna_occurence == 'common' & df$kept_in_all_genomes == TRUE,]), nrow(df[df$eccdna_occurence == 'common' & df$kept_in_all_genomes == FALSE,]))
+
+label_vector_2 <- c(percent_kept_never*0.5, percent_kept_never+percent_lost_never*0.5,  
+                    percent_kept_sometimes*0.5, percent_kept_never+percent_lost_sometimes*0.5,  
+                    percent_kept_common*0.5, percent_kept_common+ percent_lost_common*0.5)
+  
+  
+label_vector_3 <- c("EccDNA-absent genes", "EccDNA-absent genes",
+              "Other genes", "Other genes",
+              "EccDNA-associated genes", "EccDNA-associated genes")
+
+label_df <- data.frame(label_vector_1, label_vector_2, label_vector_3)
+
+p <- ggplot(plot_df, aes(x = vector_3, y = vector_1, fill = vector_2)) +
+  geom_bar(stat = 'identity', position = 'fill') +
+  geom_text(data=label_df, aes(y=label_vector_2,label=label_vector_1), size=2)+
+  scale_fill_hue() +
+  theme_minimal() +
+  scale_y_continuous() + xlab("") + ylab("Percentage") +  coord_flip()+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6)) + theme(legend.title = element_blank())+ guides(fill=guide_legend(nrow=2)) 
+
+p
+
+ggsave("pav_score_common_v_all_plot.pdf", plot = p, width = 3.25, height = 2)
+
+
+```
+```{r}
+test <-chisq.test(table(df$kept_in_all_genomes, df$eccdna_occurence))
+
+test
+
+```
+
+```{r}
+
+df <- data.frame(fread("pav_scores_per_gene"))
+
+effector_file = "guy11_effector_protein_names"
+
+effector_genes <- read.table(effector_file, header=FALSE, sep='\t')
+
+vector <- vector()
+
+for(i in 1:nrow(df)) {
+  if (df[i,][[1]] %in% common_names){
+    vector <- c(vector, 'common')
+  } else if (df[i,][[1]] %in% never_names){
+    vector <- c(vector, 'never')
+  } else {
+    vector <- c(vector, 'sometimes')
+  }
+}
+
+df$V3 <- vector
+
+df$V4 <- df$V2 == 162
+
+colnames(df) <- c('gene', 'pav_score', 'eccdna_occurence', 'kept_in_all_genomes')
+
+
+
+effector = function(x, output) {
+  id = x[[1]]
+  if (is.element(id, effector_genes$V1)){
+    return(TRUE)
+  } else{
+    return(FALSE)
+  }
+}
+
+df$effector <- apply(df, 1, effector)
+
+```
+
+```{r}
+
+percent_kept_effector <- mean(df$kept_in_all_genomes[df$effector == TRUE])
+percent_lost_effector <- 1-percent_kept_effector
+
+percent_kept_noneffector <- mean(df$kept_in_all_genomes[df$effector == FALSE])
+percent_lost_noneffector <- 1-percent_kept_noneffector
+ 
+
+vector_1 <- c(percent_lost_effector,percent_kept_effector, percent_lost_noneffector,percent_kept_noneffector)
+vector_2 <- c("M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes",
+              "M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes")
+vector_3 <- c("Predicted effectors", "Predicted effectors",
+              "Other genes", "Other genes")
+
+plot_df <- data.frame(vector_1,vector_2,vector_3)
+
+plot_df$vector_2 <- factor(plot_df$vector_2,levels = c("M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes"))
+
+plot_df$vector_3 <- factor(plot_df$vector_3,levels = c("Predicted effectors", "Other genes"))
+
+label_vector_1 <- c( nrow(df[df$effector == TRUE & df$kept_in_all_genomes == TRUE,]), nrow(df[df$effector == TRUE & df$kept_in_all_genomes == FALSE,]),
+                     nrow(df[df$effector == FALSE & df$kept_in_all_genomes == TRUE,]), nrow(df[df$effector == FALSE & df$kept_in_all_genomes == FALSE,]))
+
+label_vector_2 <- c(percent_kept_effector*0.5, percent_kept_effector+percent_lost_effector*0.5,  
+                    percent_kept_noneffector*0.5, percent_kept_noneffector+percent_lost_noneffector*0.5)
+  
+  
+label_vector_3 <- c("Predicted effectors", "Predicted effectors",
+              "Other genes", "Other genes")
+
+label_df <- data.frame(label_vector_1, label_vector_2, label_vector_3)
+
+p <- ggplot(plot_df, aes(x = vector_3, y = vector_1, fill = vector_2)) +
+  geom_bar(stat = 'identity', position = 'fill') +
+  geom_text(data=label_df, aes(y=label_vector_2,label=label_vector_1), size=2)+
+  scale_fill_hue() +
+  theme_minimal() +
+  scale_y_continuous() + xlab("") + ylab("Percentage") +  coord_flip()+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6)) + theme(legend.title = element_blank()) + guides(fill=guide_legend(nrow=2))
+
+p
+
+ggsave("pav_score_effector_v_noneffector_plot.pdf", plot = p, width = 3.25, height = 2)
+
+```
+
+```{r}
+test <-chisq.test(table(df$kept_in_all_genomes, df$effector))
+
+test
+
+```

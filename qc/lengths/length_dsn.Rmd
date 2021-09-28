@@ -1,0 +1,43 @@
+---
+title: "length_dsn"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+```
+
+```{r}
+df_unique <- data.frame(fread('unique_parallel.confirmed.length_dsn'))
+
+df_mapq0 <- data.frame(fread('mapq0_parallel.confirmed.length_dsn'))
+
+```
+
+```{r}
+p <- ggplot() + aes(df_unique$V1) + geom_histogram(binwidth=200, colour="black", fill="white", size = 0.25) + theme_classic()+
+  scale_x_continuous(limits = c(0,10000)) + ylab('Frequency') + xlab('EccDNA length (bp)')+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+
+p
+
+ggsave("length_dsn_uniquely_mapped.pdf", plot = p, width = 2, height = 2)
+
+```
+
+```{r}
+
+options(scipen = 999)
+
+p <- ggplot() + aes(df_mapq0$V1) + geom_histogram(binwidth=200, colour="black", fill="white", size = 0.25) + theme_classic()+
+  scale_x_continuous(limits = c(0,10000))+ ylab('Frequency') + xlab('EccDNA length (bp)')+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+
+p
+
+ggsave("length_dsn_multi_mapped.pdf", plot = p, width = 2, height = 2)
+
+```
+

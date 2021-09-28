@@ -1,0 +1,188 @@
+---
+title: "ecc_count_comparison_plot_full"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+library(ggpubr)
+
+df <- data.frame(fread("ecc_count_comparison_w_metadata.txt"))
+
+colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large', 'all', 'read_count',
+                 'genome_size', 'coding_bp', 'copia_bp', 'gypsy_bp',
+                 'study', 'organism', 'tissue', 'genotype', 'treatment')
+
+# normalized ecc_count is log10 of count of all eccdnas per million reads per mega basepair
+df$normalized_ecc_count <- log10(df$all/(df$read_count/1000000)/(df$genome_size/1000000))
+
+df$study <- sub("_", " ", df$study)
+df$organism <- sub("Rice_blast", "M. oryzae", df$organism)
+df$organism <- sub("Arabidopsis", "A. thaliana", df$organism)
+df$organism <- sub("Yeast", "S. cerevisiae", df$organism)
+df$organism <- sub("Human", "H. sapiens", df$organism)
+df$organism <- sub("Rice", "O. sativa", df$organism)
+df$organism <- sub("_", " ", df$organism)
+df$organism <- factor(df$organism, levels = c("M. oryzae", "H. sapiens", "S. cerevisiae", "A. thaliana", "O. sativa"))
+df$symbol <- c(rep('circle', 8), rep('circle',9), rep('circle',16), rep('triangle',16), rep('circle',2), rep('empty',2), rep('triangle',3), rep('circle',2),
+                    rep('diamond',2), rep('circle',4), rep('square',4), rep('triangle',2), rep('diamond',2), rep('diamond',3), rep('square',3), 
+               rep('triangle',3), rep('circle',3))
+
+
+```
+
+```{r}
+
+
+p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Log10 Normalized eccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+ggsave("ecc_count_comparison_plot.pdf", plot = p, width = 3.25, height = 3.5)
+
+
+```
+
+
+
+
+```{r}
+
+## exclude humans here
+
+df$percent_copia_eccs <- df$copia / df$all
+df$percent_gypsy_eccs <- df$gypsy / df$all
+df$percent_micro_eccs <- df$micro / df$all
+df$percent_large_eccs <- df$large / df$all
+df$percent_coding_eccs <- df$genic / df$all
+df$percent_noncoding_eccs <- df$noncoding / df$all
+
+df$percent_copia_genome <- df$copia_bp / df$genome_size
+df$percent_gypsy_genome <- df$gypsy_bp / df$genome_size
+df$percent_coding_genome <- df$coding_bp / df$genome_size
+df$percent_noncoding_genome <- 1 - df$percent_coding_genome
+
+df$copia_circularome_v_genome <- df$percent_copia_eccs/df$percent_copia_genome
+df$gypsy_circularome_v_genome <- df$percent_gypsy_eccs/df$percent_gypsy_genome
+df$noncoding_circularome_v_genome <- df$percent_coding_eccs/df$percent_coding_genome
+df$coding_circularome_v_genome <- df$percent_noncoding_eccs/df$percent_noncoding_genome
+
+df_nohuman_noyeast <- df[df$organism != "H. sapiens" & df$organism != "S. cerevisiae",]
+
+```
+
+```{r}
+
+
+
+p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=copia_circularome_v_genome)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Percent Copia eccDNAs over \npercent Copia elements") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("A. thaliana"), italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip() +
+  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+ggsave("copia_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
+
+
+```
+
+```{r}
+
+p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=gypsy_circularome_v_genome)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Percent Gypsy eccDNAs over \npercent Gypsy elements") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("A. thaliana"), italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+
+  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+ggsave("gypsy_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
+
+
+```
+
+```{r}
+
+p <- ggplot(df, aes(x=organism, y=coding_circularome_v_genome)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Percent coding eccDNAs over percent CDS") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+
+
+p
+
+ggsave("coding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
+
+
+```
+
+
+```{r}
+one.way <- aov(coding_circularome_v_genome ~ organism, data = df)
+
+summary(one.way)
+
+TukeyHSD(one.way)
+
+```
+
+
+
+```{r}
+
+#guide_legend("Study")
+
+p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Log10 Normalized eccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides( shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom') + guides(color = guide_legend(title="Study",nrow=1,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch'))
+
+#guide_legend(title="Study",nrow=2,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch'),
+
+#  guides(color=guide_legend(nrow=2,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
+#  theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
+
+
+p
+
+leg <- get_legend(p)
+my_legend <- as_ggplot(leg)
+
+ggsave('legend.pdf', plot = leg, width = 6.5, height = 0.5)
+
+```
+
+
+```{r}
+
+p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Log10 Normalized eccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides( shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8)) + guides(color = guide_legend(title="Study",nrow=5,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch'))
+
+p
+
+leg <- get_legend(p)
+my_legend <- as_ggplot(leg)
+
+ggsave('legend_horizontal.pdf', plot = leg, width = 1, height = 6)
+
+```
+

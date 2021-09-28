@@ -1,0 +1,153 @@
+library(data.table)
+library(ggplot2)
+library(scales)
+
+df_large_permuted <- data.frame(fread('large_eccdnas_all_uniq_shuffle_outputtable'))
+
+df_large_permuted[nrow(df_large_permuted) + 1,] <- colMeans(df_large_permuted, na.rm=TRUE)
+
+df_large_permuted <- transpose(df_large_permuted)
+
+colnames(df_large_permuted)[colnames(df_large_permuted) == gsub(" ", "", paste('V',toString(ncol(df_large_permuted),)))] <- 'means'
+
+df_large_observed <- data.frame(fread('large_eccdnas_observed_homology'))
+
+observed_mean <- mean(df_large_observed$V1)
+
+p <- ggplot(df_large_permuted, aes(x=means)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_mean, size=1.5) +
+  xlim(3.6, 3.8) + labs(x = "Average length of homology (bp) per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+
+ggsave("large_eccdnas_homology_at_ends_means_permutation.pdf", plot = p, width = 6, height = 4)
+
+
+
+get_percent_long_homology <- function(x, bp) {
+  percent <- length(x[x>=bp])/length(x)
+  return(percent)
+}
+
+df_large_permuted[,ncol(df_large_permuted) + 1] <- apply(df_large_permuted, 1, function(x) get_percent_long_homology(x, 10))
+
+
+colnames(df_large_permuted)[colnames(df_large_permuted) == gsub(" ", "", paste('V',toString(ncol(df_large_permuted),)))] <- 'percent_long_homology'
+
+observed_percent_long_homology <- get_percent_long_homology(df_large_observed$V1,10)
+
+p <- ggplot(df_large_permuted, aes(x=percent_long_homology)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_percent_long_homology, size=1.5) +
+  xlim(0.0015, 0.005) + labs(x = "Percentage of regions with more than 10 bp homology per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+ggsave("large_eccdnas_homology_at_ends_percent_long_homology_permutation.pdf", plot = p, width = 6, height = 4)
+
+
+
+
+
+df_micro_permuted <- data.frame(fread('micro_dnas_all_uniq_shuffle_outputtable'))
+
+df_micro_permuted[nrow(df_micro_permuted) + 1,] <- colMeans(df_micro_permuted, na.rm=TRUE)
+
+df_micro_permuted <- transpose(df_micro_permuted)
+
+colnames(df_micro_permuted)[colnames(df_micro_permuted) == gsub(" ", "", paste('V',toString(ncol(df_micro_permuted),)))] <- 'means'
+
+df_micro_observed <- data.frame(fread('micro_dnas_observed_homology'))
+
+observed_mean <- mean(df_micro_observed$V1)
+
+p <- ggplot(df_micro_permuted, aes(x=means)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_mean, size=1.5) +
+  xlim(3.7, 4.0) + labs(x = "Average length of homology (bp) per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+
+ggsave("micro_dnas_homology_at_ends_means_permutation.pdf", plot = p, width = 6, height = 4)
+
+get_percent_long_homology <- function(x, bp) {
+  percent <- length(x[x>=bp])/length(x)
+  return(percent)
+}
+
+
+df_micro_permuted[,ncol(df_micro_permuted) + 1] <- apply(df_micro_permuted, 1, function(x) get_percent_long_homology(x, 10))
+
+
+colnames(df_micro_permuted)[colnames(df_micro_permuted) == gsub(" ", "", paste('V',toString(ncol(df_micro_permuted),)))] <- 'percent_long_homology'
+
+observed_percent_long_homology <- get_percent_long_homology(df_micro_observed$V1,10)
+
+p <- ggplot(df_micro_permuted, aes(x=percent_long_homology)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_percent_long_homology, size=1.5) +
+  xlim(0.0015, 0.005) + labs(x = "Percentage of regions with more than 10 bp homology per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+ggsave("micro_dnas_homology_at_ends_percent_long_homology_permutation.pdf", plot = p, width = 6, height = 4)
+
+
+
+
+
+
+df_gene_permuted <- data.frame(fread('gene_containing_eccdnas_all_uniq_shuffle_outputtable'))
+
+df_gene_permuted[nrow(df_gene_permuted) + 1,] <- colMeans(df_gene_permuted, na.rm=TRUE)
+
+df_gene_permuted <- transpose(df_gene_permuted)
+
+colnames(df_gene_permuted)[colnames(df_gene_permuted) == gsub(" ", "", paste('V',toString(ncol(df_gene_permuted),)))] <- 'means'
+
+df_gene_observed <- data.frame(fread('gene_containing_eccdnas_observed_homology'))
+
+observed_mean <- mean(df_gene_observed$V1)
+
+p <- ggplot(df_gene_permuted, aes(x=means)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_mean, size=1.5) +
+  xlim(3.5, 4.0) + labs(x = "Average length of homology (bp) per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+
+ggsave("gene_containing_eccdnas_homology_at_ends_means_permutation.pdf", plot = p, width = 6, height = 4)
+
+get_percent_long_homology <- function(x, bp) {
+  percent <- length(x[x>=bp])/length(x)
+  return(percent)
+}
+
+
+df_gene_permuted[,ncol(df_gene_permuted) + 1] <- apply(df_gene_permuted, 1, function(x) get_percent_long_homology(x, 10))
+
+
+colnames(df_gene_permuted)[colnames(df_gene_permuted) == gsub(" ", "", paste('V',toString(ncol(df_gene_permuted),)))] <- 'percent_long_homology'
+
+observed_percent_long_homology <- get_percent_long_homology(df_gene_observed$V1,10)
+
+p <- ggplot(df_gene_permuted, aes(x=percent_long_homology)) + 
+  geom_histogram(color="black", fill="white", bins=100) +
+  geom_vline(xintercept = observed_percent_long_homology, size=1.5) +
+  xlim(0.0005, 0.005) + labs(x = "Percentage of regions with more than 10 bp homology per permutation", y = "Frequency") +
+  theme_classic()
+
+p
+
+ggsave("gene_containing_eccdnas_homology_at_ends_percent_long_homology_permutation.pdf", plot = p, width = 6, height = 4)
+
+

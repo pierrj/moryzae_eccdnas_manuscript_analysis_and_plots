@@ -1,0 +1,86 @@
+---
+title: "boxplot_ltr_reads"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+df <- data.frame(fread("te_eccs_per_sample.txt"))
+
+colnames(df) <- c('sample', 'te', 'genome_size', 'total_reads',
+                  'te_bp', 'reads_per_te')
+
+
+df$percent_per_te <- df$reads_per_te/df$total_reads
+
+df$percent_genome_per_te <- df$te_bp/df$genome_size
+
+df$percent_per_te_normalized <- df$percent_per_te/df$percent_genome_per_te
+
+df$percent_per_te <- df$percent_per_te * 100
+
+
+df$te <- factor(df$te, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
+
+```
+
+```{r}
+
+colors <- c('copia1' = "#E6AB02",
+'MAGGY' = "#7570B3",
+'GYMAG1' = '#03254c',
+'GYMAG2' = "#2a9df4",
+'MGRL3' = "#E7298A",
+'PYRET' = "#66A61E")
+
+p <- ggplot(df, aes(x=te, y=percent_per_te, color = te)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  scale_color_manual(values=colors)+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
+  ylab('Percent of eccDNA \nsequencing reads')
+
+p
+
+ggsave("percent_reads_per_te_boxplot.pdf", plot = p, width = 3.25, height = 3.5)
+
+```
+
+```{r}
+
+df_G3_1A <- df[df$sample == 'G3_1A',]
+
+df_G3_1A$percent_genome_per_te <- df_G3_1A$percent_genome_per_te*100
+
+p <- ggplot(df_G3_1A, aes(x=te, y=percent_genome_per_te, fill=te)) + 
+  geom_bar(stat='identity') + theme_classic()+
+  scale_fill_manual(values=colors) +
+  ylab('Percent of genome')+
+  xlab('')+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+
+p
+
+ggsave('ltr_te_genome_percentage.pdf', plot = p, width = (6.5/2), height = 2)
+
+
+```
+
+```{r}
+
+p <- ggplot(df, aes(x=te, y=percent_per_te_normalized, color = te)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  scale_color_manual(values=colors)+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
+  ylab('Percent of eccDNA sequencing reads \nover percent of the genome')
+
+p
+
+ggsave("percent_reads_per_te_normalized_boxplot.pdf", plot = p, width = 3.25, height = 3.5)
+
+```
+

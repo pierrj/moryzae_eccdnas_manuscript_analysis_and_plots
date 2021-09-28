@@ -1,0 +1,166 @@
+---
+title: "go_enrichment_common_kde_all"
+output: html_document
+---
+
+```{r}
+library(topGO)
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+get_go_observed <- function(x, ont) {
+  geneList <- factor(as.integer(geneNames %in% x))
+  names(geneList) <- geneNames
+  GOdata <- suppressMessages(new("topGOdata", ontology = ont, allGenes = geneList, annot = annFUN.gene2GO, gene2GO = geneID2GO))
+  return(termStat(GOdata)$Significant)
+}
+
+chisquare_test <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  observed_vector <- c(o_s_a, o_s_n, o_n_a, o_n_n)
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  expected_vector <- c(e_s_a, e_s_n, e_n_a, e_n_n)
+  chi <- sum((observed_vector - expected_vector)^2/expected_vector)
+  return(-log10(pchisq(chi, 1, lower.tail = FALSE)))
+}
+
+observed_expected_ratio <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  o_e_ratio <- (o_s_a/(o_s_a+o_n_a))/(e_s_a/(e_s_a+e_n_a))
+  return(o_e_ratio)
+}
+
+localGetTermsDefinition<-getFromNamespace(".getTermsDefinition", "topGO")
+
+```
+
+
+
+```{r}
+geneID2GO <-  readMappings("G3.filtered.GO.awk.txt")
+
+geneNames <- names(geneID2GO)
+
+myInterestingGenes <- as.character(read.csv("G3.common.genes",header=F, stringsAsFactors=FALSE, colClasses="character")$V1)
+geneList <- factor(as.integer(geneNames %in% myInterestingGenes))
+names(geneList) <- geneNames
+
+```
+
+
+```{r}
+
+ontologies = c("CC", "BP", "MF")
+
+for (ontology in ontologies) {
+
+  GOdata <- suppressMessages(new("topGOdata", ontology = ontology, allGenes = geneList, annot = annFUN.gene2GO, 
+                                 gene2GO = geneID2GO))
+  
+  observed <- termStat(GOdata)$Significant
+  
+  annotated <- termStat(GOdata)$Annotated
+  
+  terms <- localGetTermsDefinition(rownames(termStat(GOdata)), ontology(GOdata), numChar=1000)
+  
+  df_lengths <- data.frame(fread('guy11_fungap_out_12_28_20.gene_lengths'))
+  
+  colnames(df_lengths) <- c('gene', 'length')
+  
+  df_lengths_siggenes <- df_lengths[df_lengths$gene %in% sigGenes(GOdata), ]
+  
+  d <- density(df_lengths_siggenes$length)
+  
+  density_function <- approxfun(d)
+  
+  feasible_genes <- genes(GOdata)
+  
+  feasible_genes_lengths <- df_lengths$length[df_lengths$gene %in% feasible_genes ]
+  
+  probabilities <- density_function(feasible_genes_lengths)
+  
+  ## replace NAs with zeroes, these genes are larger than what would ever be expected in common genes
+  
+  probabilities[is.na(probabilities)] <- 0
+  
+  sampled_genes <- data.frame(replicate(100, sample(feasible_genes, size = nrow(df_lengths_siggenes), replace = FALSE, 
+                                                    prob = probabilities)))
+  
+  x <- lapply(sampled_genes, get_go_observed, ont=ontology)
+  
+  df_x <- data.frame(x)
+  
+  expected <- rowMeans(df_x)
+  
+  df_go_permuted <- data.frame(annotated, observed, expected, terms)
+  
+  rownames(df_go_permuted) <- rownames(termStat(GOdata))
+  
+  num_genes <- numGenes(GOdata)
+  num_observed_sig_genes <- numSigGenes(GOdata)
+  num_obseved_notsig_genes <- num_genes-num_observed_sig_genes
+  
+  num_expected_sig_genes <- num_observed_sig_genes
+  num_expected_notsig_genes <- num_genes - num_expected_sig_genes
+  
+  df_go_permuted$chi <- apply(df_go_permuted, 1, chisquare_test)
+  
+  df_go_permuted$observed_expected_ratio <- apply(df_go_permuted,1,observed_expected_ratio)
+  
+  # omit NAs from chisquare test
+  df_ontology_name <- paste('filtered_df_', ontology, sep = "")
+  subset <- na.omit(df_go_permuted[df_go_permuted$annotated > 5 & df_go_permuted$chi > -log10(0.05),])
+  write.csv(subset,paste("filtered_df_all_hits_", ontology, ".csv", sep=""))
+  # sort and subset to top20
+  assign(df_ontology_name, head(subset[order(-subset$chi),], 20))
+}
+
+```
+
+```{r}
+
+
+p_cc <- ggplot(filtered_df_CC, aes(x = observed_expected_ratio, y = terms)) +
+  geom_point(aes(color=chi, size=annotated)) + theme_classic() +
+  scale_colour_gradient(low = "blue", high = "red") +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  xlab("Observed count over expected count") + ylab("Cellular componet") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+ggsave("common_go_enrichment_cc.pdf", plot = p_cc, width = 6.5, height = 3.5)
+
+
+p_bp <- ggplot(filtered_df_BP, aes(x = observed_expected_ratio, y = terms)) +
+  geom_point(aes(color=chi, size=annotated)) + theme_classic() +
+  scale_colour_gradient(low = "blue", high = "red") +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  xlab("Observed count over expected count") + ylab("Biological pathway") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+ggsave("common_go_enrichment_bp.pdf", plot = p_bp, width = 6.5, height = 3.5)
+
+
+p_mf <- ggplot(filtered_df_MF, aes(x = observed_expected_ratio, y = terms)) +
+  geom_point(aes(color=chi, size=annotated)) + theme_classic() +
+  scale_colour_gradient(low = "blue", high = "red") +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  xlab("Observed count over expected count") + ylab("Molecular function") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+ggsave("common_go_enrichment_mf.pdf", plot = p_mf, width = 6.5, height = 3.5)
+
+
+```

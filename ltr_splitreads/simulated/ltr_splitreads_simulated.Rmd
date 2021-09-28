@@ -1,0 +1,102 @@
+---
+title: "ltr_splitreads_simulated"
+output: html_document
+---
+
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+num_simulated_reads <- 2000000*2
+
+circle_infos <- list()
+
+circle_infos[[1]] <- c('one_ltr_hr','1-LTR eccDNA \n(homologous recombination)')
+circle_infos[[2]] <- c('one_ltr_auto','1-LTR eccDNA \n(autointegration)')
+circle_infos[[3]] <- c('two_ltr_nhej','2-LTR eccDNA \n ')
+
+
+```
+
+
+```{r}
+
+for (circle_info in circle_infos){
+  
+  circle <- circle_info[[1]]
+  circle_label <- circle_info[[2]]
+  
+  df <- data.frame(fread(paste(circle, '_circle_seq_randomized.coverage', sep='')))
+  df <- data.frame(df$V2, df$V3)
+  colnames(df) <- c('bp','coverage')
+  
+  df$coverage <- df$coverage/num_simulated_reads
+  
+  ltr_length <- 539
+  element_length <- 539+539+6562
+
+  ltr_one_start <- 1
+  ltr_one_middle <- ltr_length/2
+  ltr_one_end <- ltr_length
+  
+  ltr_two_start <- element_length-ltr_length
+  ltr_two_middle <- element_length-ltr_length+(ltr_length/2)
+  ltr_two_end <- element_length
+  
+  p <- ggplot(df, aes(x=bp, y=coverage)) + 
+  geom_line(color='black',lwd=0.5)+theme_classic()+ylim(0,0.5)+
+  scale_x_continuous(labels=c('', 'LTR', '', '', 'LTR', ''), 
+                     breaks=c(ltr_one_start, ltr_one_middle, ltr_one_end, ltr_two_start, ltr_two_middle, ltr_two_end)) + 
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8))+
+  theme(axis.ticks.x = element_line(colour=c('black', 'transparent', 'black', 'black',
+                                             'transparent', 'black'))) +
+  ylab('Fraction of simulated reads') + xlab(circle_label)
+
+  ggsave(paste(circle,'_simulated_plot_profile.pdf',sep=''), plot=p, width=(6.5/3), height=2)
+  
+}
+
+
+```
+
+
+```{r}
+
+for (circle_info in circle_infos){
+  
+  circle <- circle_info[[1]]
+  circle_label <- circle_info[[2]]
+  
+  df <- data.frame(fread(paste(circle, '_circle_seq_randomized_maggy.coverage', sep='')))
+  df <- data.frame(df$V2, df$V3)
+  colnames(df) <- c('bp','coverage')
+  
+  df$coverage <- df$coverage/num_simulated_reads
+  
+  ltr_length <-  255
+  element_length <- 255+255+5134
+
+  ltr_one_start <- 1
+  ltr_one_middle <- ltr_length/2
+  ltr_one_end <- ltr_length
+  
+  ltr_two_start <- element_length-ltr_length
+  ltr_two_middle <- element_length-ltr_length+(ltr_length/2)
+  ltr_two_end <- element_length
+  
+  p <- ggplot(df, aes(x=bp, y=coverage)) + 
+  geom_line(color='black',lwd=0.5)+theme_classic()+ylim(0,0.7)+
+  scale_x_continuous(labels=c('', 'LTR', '', '', 'LTR', ''), 
+                     breaks=c(ltr_one_start, ltr_one_middle, ltr_one_end, ltr_two_start, ltr_two_middle, ltr_two_end)) + 
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8))+
+  theme(axis.ticks.x = element_line(colour=c('black', 'transparent', 'black', 'black',
+                                             'transparent', 'black'))) +
+  ylab('Fraction of simulated reads') + xlab(circle_label)
+
+  ggsave(paste(circle,'_simulated_plot_profile_maggy.pdf',sep=''), plot=p, width=(6.5/3), height=2)
+  
+}
+
+```
+

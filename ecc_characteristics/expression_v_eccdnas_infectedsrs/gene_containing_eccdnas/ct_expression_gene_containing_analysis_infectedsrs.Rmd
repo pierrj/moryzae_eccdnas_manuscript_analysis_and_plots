@@ -1,0 +1,48 @@
+---
+title: "ct_expression_gene_containing_analysis_infectedsrs"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+
+library(data.table)
+library(ggplot2)
+library(scales)
+
+df_rpkm <- data.frame(fread('IF.RPKMvsSRs'))
+
+colnames(df_rpkm) <- c("gene", "rpkm", "srs")
+
+df_rpkm <- df_rpkm[df_rpkm$srs != 0 & df_rpkm$rpkm != 0,]
+
+df_rpkm$rpkm <- log10(df_rpkm$rpkm)
+
+df_rpkm$srs <- log10(df_rpkm$srs)
+
+p <- ggplot(df_rpkm, aes(x=rpkm, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Log10 RPKM",
+       y="Log10 split reads per gene") + theme_classic()
+
+p
+
+ggsave("ct_expression_gene_containing_rpkm_plot_infectedsrs.pdf", plot = p, width = 6, height = 4)
+
+```
+
+```{r}
+cor.test(df_rpkm$rpkm, df_rpkm$srs, method=c("pearson"))
+```
+
+```{r}
+summary(lm(df_rpkm$srs ~ df_rpkm$rpkm))
+```
+
+```{r}
+pdf(file = "ct_expression_gene_containing_rpkm_diagnostics_infectedsrs.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_rpkm$srs ~ df_rpkm$rpkm))
+dev.off()
+```

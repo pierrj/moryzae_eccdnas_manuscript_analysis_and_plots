@@ -1,0 +1,359 @@
+---
+title: "circos_plot_tests"
+output: html_document
+---
+
+
+```{r}
+library('circlize')
+library('ComplexHeatmap')
+
+```
+
+```{r}
+par(mar = c(1, 1, 1, 1))
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_genes <- data.frame(fread('genes_for_circos'))
+df_genes$value <- rep(1,nrow(df_genes))
+df_tes <- data.frame(fread('tes_for_circos'))
+df_tes$value <- rep(1,nrow(df_tes))
+df_eccs <- data.frame(fread('eccdna_genomecoverage_for_circos'))
+```
+
+```{r}
+pdf("my_plot.pdf")
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_genes, ylim = c(0, 2), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "segment", lwd = 2, ...)
+})
+dev.off()
+```
+```{r}
+pdf("my_plot.pdf")
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_tes, ylim = c(0, 2), panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0)
+})
+circos.genomicTrackPlotRegion(df_eccs, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 2, ...)
+})
+dev.off()
+```
+
+
+```{r}
+par(mar = c(1, 1, 1, 1))
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_gene_density <- data.frame(fread('gene_density'))
+df_copias <- data.frame(fread('copia_locs'))
+df_gypsys <- data.frame(fread('gypsy_locs'))
+
+df_large_density <- data.frame(fread('large_ecc_density'))
+df_micro_density <- data.frame(fread('micro_dna_density'))
+df_ltrecc_density <- data.frame(fread('ltr_ecc_density'))
+df_repeat_density <- data.frame(fread('repeat_density'))
+
+#df_tes$value <- rep(1,nrow(df_tes))
+#df_genes$value <- rep(1,nrow(df_genes))
+
+```
+
+```{r}
+pdf("my_plot.pdf")
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_gene_density, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_repeat_density, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_copias, ylim = c(0, 2), panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0)
+})
+circos.genomicTrackPlotRegion(df_gypsys, ylim = c(0, 2), panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0)
+})
+circos.genomicTrackPlotRegion(df_ltrecc_density, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_large_density, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_micro_density, ylim = c(0, 1), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+dev.off()
+```
+```{r}
+
+df_gene_locs_with_col <- data.frame(fread('genes_for_circos'))
+
+df_gene_locs_with_col$V4 <- round(rnorm(nrow(df_gene_locs_with_col), mean=0.5, sd=0.3))
+
+df_gene_locs_with_col$V4[df_gene_locs_with_col$V4 < 0 ] <- 0
+
+df_gene_locs_with_col$V4[df_gene_locs_with_col$V4 > 1 ] <- 1
+
+```
+
+
+```{r}
+
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_gene_locs_with_col <- data.frame(fread(''))
+
+df_gene_locs_with_col$V4 <- round(rnorm(nrow(df_gene_locs_with_col), mean=0.5, sd=0.3))
+
+df_gene_locs_with_col$V4[df_gene_locs_with_col$V4 < 0 ] <- 0
+
+df_gene_locs_with_col$V4[df_gene_locs_with_col$V4 > 1 ] <- 1
+
+df_genome <- df_genome[df_genome$V1 == 1,]
+df_gene_locs_with_col <- df_gene_locs_with_col[df_gene_locs_with_col$V1 == 1,]
+
+pdf("color_test.pdf")
+
+col_fun = colorRamp2(c(0, 0.5, 1), c("blue", "white", "red"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_gene_locs_with_col, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun(value), border = NA)
+})
+
+dev.off()
+
+```
+
+```{r}
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_large_ecc_density <- data.frame(fread('large_ecc_density'))
+df_large_ecc_density$V4[df_large_ecc_density$V4 == -Inf] <- -1
+
+
+#df_genome <- df_genome[df_genome$V1 == 1,]
+#df_large_ecc_density <- df_large_ecc_density[df_large_ecc_density$V1 == 1,]
+
+pdf("logdensity_test.pdf")
+
+col_fun = colorRamp2(c(0, 0.5, 1), c("blue", "white", "red"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_large_density, ylim = c(min(df_large_ecc_density$V4), max(df_large_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 0.5, ...)
+})
+
+dev.off()
+
+```
+```{r}
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_rpkm <- data.frame(fread('rpkm'))
+df_rpkm$V4[df_rpkm$V4 == -Inf] <- -3
+
+
+#df_genome <- df_genome[df_genome$V1 == 1,]
+#df_rpkm[df_rpkm$V1 != 1,] <- df_rpkm[df_rpkm$V1 == 1,]
+
+pdf("expression_color_test.pdf")
+
+col_fun = colorRamp2(c(min(df_rpkm$V4), mean(df_rpkm$V4), max(df_rpkm$V4)), c("blue", "white", "red"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_rpkm, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun(value), border = NA)
+})
+
+dev.off()
+
+```
+ 
+```{r}
+df_genome <- data.frame(fread('guy11_genome_baoetal2017.chromsizes.forcircos'))
+df_rpkm <- data.frame(fread('rpkm'))
+df_rpkm$V4[df_rpkm$V4 == -Inf] <- -3
+df_large_ecc_density <- data.frame(fread('large_ecc_density'))
+df_large_ecc_density$V4 <- df_large_ecc_density$V4/max(df_large_ecc_density$V4)
+df_ltr_ecc_density <- data.frame(fread('ltr_ecc_density'))
+df_ltr_ecc_density$V4 <- df_ltr_ecc_density$V4/max(df_ltr_ecc_density$V4)
+df_micro_dna_density <- data.frame(fread('micro_dna_density'))
+df_micro_dna_density$V4 <- df_micro_dna_density$V4/max(df_micro_dna_density$V4)
+df_copias <- data.frame(fread('copia_locs'))
+df_gypsys <- data.frame(fread('gypsy_locs'))
+df_effectors <- data.frame(fread('effector_locs'))
+df_pav <- data.frame(fread('pav_per_gene'))
+
+```
+```{r}
+
+
+subset_chroms <- function(df, chrom_start, chrom_end) {
+    return(df[df$V1 >= chrom_start & df$V1 <= chrom_end,])
+   }
+
+subset_chroms(df_rpkm,21,56)
+
+
+```
+ 
+```{r}
+pdf("finalizing_tests.pdf")
+
+col_fun = colorRamp2(c(min(df_rpkm$V4), mean(df_rpkm$V4), max(df_rpkm$V4)), c("blue", "white", "red"))
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(df_genome)
+circos.genomicTrackPlotRegion(df_rpkm, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun(value), border = NA)
+})
+circos.genomicTrackPlotRegion(df_pav, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun2(value), border = NA)
+})
+circos.genomicTrackPlotRegion(df_copias, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = 'purple', border = NA)
+})
+circos.genomicTrackPlotRegion(df_gypsys, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#97572b', border = NA)
+})
+circos.genomicTrackPlotRegion(df_effectors, ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#09ab00', border = NA)
+})
+circos.genomicTrackPlotRegion(df_large_ecc_density, ylim = c(min(df_large_ecc_density$V4), max(df_large_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_micro_dna_density, ylim = c(min(df_micro_dna_density$V4), max(df_micro_dna_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col = 'blue', lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(df_ltr_ecc_density, ylim = c(min(df_ltr_ecc_density$V4), max(df_ltr_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col='red',lwd = 1, ...)
+})
+
+dev.off()
+```
+```{r}
+
+lgd_rpkm = Legend(at = c(-3, 4.5), col_fun = col_fun, 
+    title_position = "topleft", title = "Gene Expression (Log10 RPKM)")
+lgd_pav = Legend(at = c("Retained in all genomes", "Lost in at least one genome"), type = "lines", 
+    legend_gp = gpar(col = c('black', 'orange'), lwd = 2), title_position = "topleft", 
+    title = "Presence Absence Variation")
+lgd_copias = Legend(at = c("Location"), type = "lines", 
+    legend_gp = gpar(col = c('purple'), lwd = 2), title_position = "topleft", 
+    title = "LTR/Copia Elements")
+lgd_gypsys = Legend(at = c("Location"), type = "lines", 
+    legend_gp = gpar(col = c('#97572b'), lwd = 2), title_position = "topleft", 
+    title = "LTR/Gypsy Elements")
+lgd_effectors = Legend(at = c("Location"), type = "lines", 
+    legend_gp = gpar(col = c('#09ab00'), lwd = 2), title_position = "topleft", 
+    title = "Predicted Effectors")
+lgd_large = Legend(at = c("Normalized Splitread Count"), type = "points", 
+    legend_gp = gpar(col = c('black')), title_position = "topleft", 
+    title = "Large eccDNA Density")
+lgd_micro = Legend(at = c("Normalized Splitread Count"), type = "points", 
+    legend_gp = gpar(col = c('blue')), title_position = "topleft", 
+    title = "Micro DNA Density")
+lgd_ltr = Legend(at = c("Normalized Splitread Count"), type = "points", 
+    legend_gp = gpar(col = c('red')), title_position = "topleft", 
+    title = "LTR eccDNA Density")
+lgd_list_vertical = packLegend(lgd_rpkm, lgd_pav, lgd_copias, lgd_gypsys, lgd_effectors, lgd_large, lgd_micro, lgd_ltr)
+pdf("legend.pdf")
+draw(lgd_list_vertical, x = unit(4, "mm"), y = unit(4, "mm"), just = c("left", "bottom"))
+dev.off()
+
+```
+ 
+```{r}
+
+chrom_start = 1
+chrom_end = 20
+
+pdf("first_few_chroms.pdf")
+
+col_fun = colorRamp2(c(min(df_rpkm$V4), mean(df_rpkm$V4), max(df_rpkm$V4)), c("blue", "white", "red"))
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(subset_chroms(df_genome,chrom_start,chrom_end))
+circos.genomicTrackPlotRegion(subset_chroms(df_rpkm,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun(value), border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_pav,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun2(value), border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_copias,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = 'purple', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_gypsys,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#97572b', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_effectors,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#09ab00', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_large_ecc_density,chrom_start,chrom_end), ylim = c(min(df_large_ecc_density$V4), max(df_large_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_micro_dna_density,chrom_start,chrom_end), ylim = c(min(df_micro_dna_density$V4), max(df_micro_dna_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col = 'blue', lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_ltr_ecc_density,chrom_start,chrom_end), ylim = c(min(df_ltr_ecc_density$V4), max(df_ltr_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col='red',lwd = 1, ...)
+})
+
+dev.off()
+```
+ 
+```{r}
+chrom_start = 21
+chrom_end = 56
+
+pdf("last_few_chroms.pdf")
+
+col_fun = colorRamp2(c(min(df_rpkm$V4), mean(df_rpkm$V4), max(df_rpkm$V4)), c("blue", "white", "red"))
+col_fun2 = colorRamp2(c(0, 0.5, 1), c("orange", "white", "black"))
+circos.par("track.height" = 0.05)
+circos.genomicInitialize(subset)
+circos.genomicTrackPlotRegion(subset_chroms(df_rpkm,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun(value), border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_pav,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = col_fun2(value), border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_copias,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = 'purple', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_gypsys,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#97572b', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_effectors,chrom_start,chrom_end), ylim = c(0, 2), bg.border = 0, panel.fun = function(region, value, ...) {
+  circos.genomicRect(region, value, ytop=2,ybottom=0, col = '#09ab00', border = NA)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_large_ecc_density,chrom_start,chrom_end), ylim = c(min(df_large_ecc_density$V4), max(df_large_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_micro_dna_density,chrom_start,chrom_end), ylim = c(min(df_micro_dna_density$V4), max(df_micro_dna_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col = 'blue', lwd = 1, ...)
+})
+circos.genomicTrackPlotRegion(subset_chroms(df_ltr_ecc_density,chrom_start,chrom_end), ylim = c(min(df_ltr_ecc_density$V4), max(df_ltr_ecc_density$V4)), panel.fun = function(region, value, ...) {
+  circos.genomicLines(region, value, type = "l", col='red',lwd = 1, ...)
+})
+
+dev.off()
+```
+ 
+```{r}
+subset <- subset_chroms(df_genome,chrom_start,chrom_end)
+rownames(subset) <- NULL
+colnames(subset) <- c('name', 'start', 'end')
+subset$name <- as.character(subset$name)
+
+circos.genomicInitialize(subset)
+```
+ 
+```{r}
+df = data.frame(
+    name  = c("TP53",  "TP63",    "TP73"),
+    start = c(7565097, 189349205, 3569084),
+    end   = c(7590856, 189615068, 3652765))
+circos.genomicInitialize(df)
+```
+ 
+ 

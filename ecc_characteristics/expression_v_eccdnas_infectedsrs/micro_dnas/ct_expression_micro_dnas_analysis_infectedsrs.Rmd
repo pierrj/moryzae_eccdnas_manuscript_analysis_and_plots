@@ -1,0 +1,134 @@
+---
+title: "ct_expression_micro_dnas_analysis_infectedsrs"
+output: html_document
+---
+
+
+
+```{r}
+
+library(data.table)
+library(ggplot2)
+library(scales)
+
+df_rpkm <- data.frame(fread('IF.RPKMvsSRs'))
+
+colnames(df_rpkm) <- c("gene", "rpkm", "srs")
+
+df_rpkm <- df_rpkm[df_rpkm$srs != 0 & df_rpkm$rpkm != 0,]
+
+df_rpkm$rpkm <- log10(df_rpkm$rpkm)
+
+df_rpkm$srs <- log10(df_rpkm$srs)
+
+p <- ggplot(df_rpkm, aes(x=rpkm, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Log10 RPKM",
+       y="Log10 split reads per gene") + theme_classic()
+
+p
+
+ggsave("ct_expression_micro_dnas_rpkm_plot_infectedsrs.pdf", plot = p, width = 6, height = 4)
+
+```
+
+```{r}
+cor.test(df_rpkm$rpkm, df_rpkm$srs, method=c("pearson"))
+```
+
+```{r}
+summary(lm(df_rpkm$srs ~ df_rpkm$rpkm))
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(df_rpkm$srs ~ df_rpkm$rpkm))
+
+pdf(file = "ct_expression_micro_dnas_rpkm_diagnostics_infectedsrs.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_rpkm$srs ~ df_rpkm$rpkm))
+dev.off()
+```
+
+
+```{r}
+df_genesper100kb <- data.frame(fread('IF.SRsvsgenesper100kb'))
+
+colnames(df_genesper100kb) <- c("scaffold", "start", "end", "gene_count", "srs")
+
+df_genesper100kb <- df_genesper100kb[df_genesper100kb$srs != 0 & df_genesper100kb$gene_count != 0,]
+
+df_genesper100kb$srs <- log10(df_genesper100kb$srs)
+
+
+p <- ggplot(df_genesper100kb, aes(x=gene_count, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Genes per 100kb bin",
+       y="Log10 split reads per 100kb bin") + theme_classic()
+
+p
+
+ggsave("ct_expression_micro_dnas_genesperk100kb_plot_infectedsrs.pdf", plot = p, width = 6, height = 4)
+```
+
+
+```{r}
+cor.test(df_genesper100kb$gene_count, df_genesper100kb$srs, method=c("pearson"))
+
+```
+
+```{r}
+summary(lm(df_genesper100kb$srs ~ df_genesper100kb$gene_count))
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(df_genesper100kb$srs ~ df_genesper100kb$gene_count))
+
+pdf(file = "ct_expression_micro_dnas_genesper100kb_diagnostics_infectedsrs.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_genesper100kb$srs ~ df_genesper100kb$gene_count))
+dev.off()
+```
+
+
+```{r}
+df_genesperscaffold <- data.frame(fread('IF.SRsvsgenesperk100kbperscaffold'))
+
+colnames(df_genesperscaffold) <- c("scaffold", "gene_count", "srs")
+
+df_genesperscaffold <- df_genesperscaffold[df_genesperscaffold$srs != 0 & df_genesperscaffold$gene_count != 0,]
+
+df_genesperscaffold$srs <- log10(df_genesperscaffold$srs)
+
+p <- ggplot(df_genesperscaffold, aes(x=gene_count, y=srs)) + geom_point() + geom_smooth(method='lm', color='red') +
+    labs(x="Genes per scaffold",
+       y="Split reads per scaffold") + theme_classic()
+
+p
+
+ggsave("ct_expression_micro_dnas_genesperk100kbperscaffold_plot_infectedsrs.pdf", plot = p, width = 6, height = 4)
+```
+
+```{r}
+cor.test(df_genesperscaffold$gene_count, df_genesperscaffold$srs, method=c("pearson"))
+
+```
+
+
+```{r}
+summary(lm(df_genesperscaffold$srs ~ df_genesperscaffold$gene_count))
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(df_genesperscaffold$srs ~ df_genesperscaffold$gene_count))
+
+pdf(file = "ct_expression_micro_dnas_genesperk100kbperscaffold_diagnostics_infectedsrs.pdf", width = 6, height = 4)
+par(mfrow=c(2,2))
+plot(lm(df_genesperscaffold$srs ~ df_genesperscaffold$gene_count))
+dev.off()
+```
+
+
+

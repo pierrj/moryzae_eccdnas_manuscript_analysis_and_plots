@@ -1,0 +1,85 @@
+---
+title: "coverage_plot_ggplot"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+
+```
+
+```{r}
+df <- data.frame(fread('G3.normalized_binned.filtered.renamed.withbinnames.table'))
+
+snps_of_interest <- readLines('snps.tohighlight')
+
+
+highlight = function(x) {
+  id = as.character(x[4])
+  if (is.element(id, snps_of_interest)){
+    return(TRUE)
+  } else{
+    return(FALSE)
+  }
+}
+
+df$HIGHLIGHT <- apply(df, 1, highlight)
+
+df[df$HIGHLIGHT == TRUE,]
+
+```
+
+```{r}
+
+v <- numeric()
+
+for (scaffold in 1:56){
+  v[scaffold] <- max(df$BASE[df$CHROMOSOME == scaffold])
+}
+
+x <- numeric()
+
+for (scaffold in 1:56){
+  x[scaffold] <- sum(v[1:scaffold]) - v[scaffold]
+}
+
+
+f <- function(g) {
+ base <- as.numeric(g[2])
+ scaffold <- as.numeric(g[1])
+ base_total <- base + x[scaffold]
+ return(base_total)
+}
+
+df$BASE_TOTAL <- apply(df, 1, f)
+
+
+
+```
+
+```{r}
+ticks <- numeric()
+
+for (scaffold in 1:10){
+  ticks[scaffold] <- v[scaffold]*0.5 + (sum(v[1:scaffold]) - v[scaffold])
+}
+
+labs <- 1:10
+
+df <- df[df$CHROMOSOME < 11,]
+
+p <- ggplot() + 
+  geom_point(data = df[df$CHROMOSOME %% 2 == 0,], aes(x=BASE_TOTAL, y=COUNT), size = 0.1) +
+  geom_point(data = df[df$CHROMOSOME %% 2 == 1,], aes(x=BASE_TOTAL, y=COUNT), color = 'grey', size = 0.1) +
+  geom_point(data = df[df$HIGHLIGHT == TRUE,], aes(x=BASE_TOTAL, y=COUNT), color = 'green', size = 0.1) +
+  scale_x_continuous(labels=labs, breaks = ticks) + theme_classic() + xlab('Scaffold') + ylab('Normalized junction \nsplit read count')+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+  
+p
+
+
+ggsave('C:/globus/final_figures/figures/illustrator_figures/tiffs/coverage_plot_ggplot.tiff', width=6.5, height=2, device = 'tiff', dpi = 1000)
+
+```
+

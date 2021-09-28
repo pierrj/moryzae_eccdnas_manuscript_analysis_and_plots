@@ -1,0 +1,72 @@
+---
+title: "ltr_splitreads_correlation"
+output: html_document
+---
+
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(scales)
+
+df <- data.frame(fread('cov_feature_table'))
+
+colnames(df) <- c("feature","ltr_srs", "ltr_ltr_srs", "ltr_internal_srs", "reads", "junction")
+
+```
+
+```{r}
+elements <- c('GYMAG1', 'GYMAG2', 'PYRET', 'MAGGY', 'copia', 'MGRL3')
+
+df_cors <- list()
+
+for (element in elements)
+{
+  segment <- "LTR"
+  cor1 <- 'reads'
+  cor2 <- 'ltr_ltr_srs'
+  df_test <- df[grepl(element, df$feature),]
+  df_test <- df_test[grepl(segment, df_test$feature),]
+  cor_test <- cor.test(df_test[[cor1]], df_test[[cor2]], method=c("pearson"))
+  ltr_cor <- cor_test$estimate[[1]]
+  segment <- "INTERNAL"
+  cor1 <- 'reads'
+  cor2 <- 'ltr_internal_srs'
+  df_test <- df[grepl(element, df$feature),]
+  df_test <- df_test[grepl(segment, df_test$feature),]
+  cor_test <- cor.test(df_test[[cor1]], df_test[[cor2]], method=c("pearson"))
+  internal_cor <- cor_test$estimate[[1]]
+  df_cors[[element]] <- c(ltr_cor,internal_cor)
+}
+
+data.frame(df_cors)
+
+```
+
+
+```{r}
+
+element <- "MAGGY"
+  
+segment <- "LTR"
+
+cor1 <- 'reads'
+
+cor2 <- 'ltr_ltr_srs'
+
+
+df_test <- df[grepl(element, df$feature),]
+
+df_test <- df_test[grepl(segment, df_test$feature),]
+
+p <- ggplot(df_test, aes_string(x=cor1, y=cor2)) + geom_smooth(method='lm', color='red') + geom_point()
+
+p
+
+cor.test(df_test[[cor1]], df_test[[cor2]], method=c("pearson"))
+
+#cor.test(df_test$ltr_srs, df_test$ltr_internal_srs, method=c("pearson"))
+
+summary(lm(df_test[[cor2]] ~ df_test[[cor1]]))
+
+```
