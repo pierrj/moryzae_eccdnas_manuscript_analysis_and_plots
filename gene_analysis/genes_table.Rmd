@@ -1,0 +1,86 @@
+---
+title: "genes_table"
+output: html_document
+---
+
+```{r}
+library(data.table)
+```
+
+```{r}
+
+df <- data.frame(fread('guy11_fungap_out_12_28_20.justgenes.renamed.bed'))
+
+colnames(df) <- c('scaffold', 'start', 'end', 'gene_id')
+  
+common_genes <- read.table('G3.common.genes', header=FALSE,sep='\t')
+
+neverfound_genes <- read.table('G3.neverfound.genes', header=FALSE,sep='\t')
+
+effector_genes <- read.table('guy11_effector_protein_names', header=FALSE, sep='\t')
+
+known_effectors <- read.table('known_effectors_fungap_names', header=FALSE, sep='\t')
+
+pav_scores <- read.table('pav_scores_per_gene', header=FALSE, sep='\t')
+
+```
+
+```{r}
+
+effector = function(x, output) {
+  id = x[[4]]
+  if (is.element(id, effector_genes$V1)){
+    return('yes')
+  } else{
+    return('no')
+  }
+}
+
+df$predicted_effector <- apply(df, 1, effector)
+
+avr = function(x, output) {
+  id = x[[4]]
+  if (is.element(id, known_effectors$V2)){
+    return(as.character(known_effectors$V1[known_effectors$V2 == id]))
+  } else{
+    return('no')
+  }
+}
+
+df$known_effector <- apply(df, 1, avr)
+
+eccdna = function(x, output) {
+  id = x[[4]]
+  if (is.element(id, common_genes$V1)){
+    return('eccDNA-associated')
+  } else if (is.element(id, neverfound_genes$V1)){
+    return('eccDNA-absent')
+  } else {
+    return('other')
+  }
+}
+
+df$eccdna_status <- apply(df,1,eccdna)
+
+```
+
+```{r}
+
+pav = function(x, output) {
+  id = x[[4]]
+  score = as.numeric(pav_scores$V2[pav_scores$V1==id])
+  if (score == 162){
+    return('kept')
+  } else {
+    return('lost')
+  }
+}
+
+df$kept_lost <- apply(df,1,pav)
+
+```
+
+```{r}
+write.table(df, sep='\t', file = 'moryzae_guy11_info_per_gene.txt', row.names = FALSE, col.names = TRUE, quote=FALSE)
+```
+
