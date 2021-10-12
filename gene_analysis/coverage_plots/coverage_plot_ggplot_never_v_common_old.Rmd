@@ -41,7 +41,7 @@ df$status[df$splitreads >= common_genes_cutoff] <- 'eccDNA-associated'
 
 df$status[is.na(df$status)] <- 'Other genes'
 
-df
+df[df$splitreads>2,]
 
 ```
 

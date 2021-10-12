@@ -8,9 +8,7 @@ library(data.table)
 library(ggplot2)
 library(RColorBrewer)
 library(ggpubr)
-source("https://raw.githubusercontent.com/datavizpyr/data/master/half_flat_violinplot.R")
-library(ggforce)
-#library(scales)
+library(ggrepel)
 
 ```
 
@@ -84,6 +82,56 @@ df$splitreads <- log10(df$splitreads)
 ```
 
 ```{r}
+known_genes_files = 'guy11_70_15_gene_names.txt'
+known_genes_table = read.table(known_genes_files, header=FALSE, sep='\t')
+
+grab_splitreads <- function(x) {
+  return(df$splitreads[df$gene == x[2]])
+}
+grab_base <- function(x) {
+  return(df$BASE_TOTAL[df$gene == x[2]])
+}
+
+known_genes_table$V3 <- apply(known_genes_table, 1, grab_splitreads)
+known_genes_table$V4 <- apply(known_genes_table, 1, grab_base)
+
+  
+colnames(known_genes_table) <- c('name_70_15', 'gene', 'splitreads', 'BASE_TOTAL')
+
+
+known_genes_table$name_70_15 <- as.character(known_genes_table$name_70_15)
+
+known_genes_table <- known_genes_table[known_genes_table$name_70_15 != 'unknown',]
+
+known_genes_table <- known_genes_table[! startsWith(known_genes_table$name_70_15,'MGG_'),]
+
+known_genes_table <- known_genes_table[! startsWith(known_genes_table$name_70_15,'MGCH'),]
+
+known_genes_table_associated <- known_genes_table[known_genes_table$splitreads > -0.4279071,]
+
+known_genes_table_absent <- known_genes_table[known_genes_table$splitreads == min(known_genes_table$splitreads),]
+
+```
+
+
+```{r}
+
+known_genes_table[known_genes_table$name_70_15 == 'MGG_00912',]
+
+df[df$gene == 'gene_05579.t1',]
+
+
+MGG_04843
+
+
+known_genes_table[known_genes_table$name_70_15 == 'TRF1',]
+
+df[df$gene == 'gene_02216.t1',]
+
+```
+
+
+```{r}
 
 start_subset <- 1
 
@@ -111,6 +159,8 @@ p1 <- ggplot() +
   geom_point(data = df_subset[df_subset$status=="eccDNA-associated",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-associated'),size=0.1) +
   geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
                    yend=log10(common_genes_cutoff)),colour='#E6AB02')+
+      geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0) +
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
@@ -204,6 +254,8 @@ p2 <- ggplot() +
   geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])), 
                 y=log10(common_genes_cutoff), 
                 yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
+        geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0) +
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +

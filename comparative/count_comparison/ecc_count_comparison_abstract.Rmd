@@ -1,0 +1,195 @@
+---
+title: "ecc_count_comparison_abstract"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(scatterpie)
+library(ggpubr)
+
+df <- data.frame(fread("ecc_count_comparison_w_metadata.txt"))
+
+colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large', 'all', 'read_count',
+                 'genome_size', 'coding_bp', 'copia_bp', 'gypsy_bp',
+                 'study', 'organism', 'tissue', 'genotype', 'treatment')
+
+df[is.na(df)] <- 0
+```
+
+```{r}
+
+## subset to representative
+
+# for moryzae its my study
+
+# for rice its lanciano
+
+# for athaliana its wang
+
+# for human its moller
+
+# for yeast its moller
+
+df <- df[! (df$organism == 'Rice' & df$study == 'This_Study'),]
+df <- df[! (df$organism == 'Arabidopsis' & df$study == '2017_Lanciano'),]
+
+## we'll do muscle for human
+
+df <- df[! (df$organism == 'Human' & df$tissue == 'Leukocyte'),]
+
+## rice leaves
+
+df <- df[! (df$organism == 'Rice' & df$tissue == 'Callus'),]
+df <- df[! (df$organism == 'Rice' & df$tissue == 'Seed'),]
+
+## arabidopsis leaves
+
+df <- df[! (df$organism == 'Arabidopsis' & df$tissue == 'Stem'),]
+df <- df[! (df$organism == 'Arabidopsis' & df$tissue == 'Flower'),]
+df <- df[! (df$organism == 'Arabidopsis' & df$tissue == 'Root'),]
+
+## yeast deletion collection
+
+df <- df[! (df$organism == 'Yeast' & df$treatment == 'Zeocin'),]
+df <- df[! (df$organism == 'Yeast' & df$genotype == 'GAP1circle'),]
+df <- df[! (df$organism == 'Yeast' & df$genotype == 'WT'),]
+
+```
+
+```{r}
+
+df <- aggregate(x = df[ , colnames(df) != "organism" & colnames(df) != "sample"],
+          by = list(df$organism),
+          FUN = mean)
+
+
+```
+
+```{r}
+
+df$genome_size <- as.numeric(df$genome_size)
+
+df$genic_percent <- df$genic/df$all*100
+df$copia_percent <- df$copia/df$all*100
+df$gypsy_percent <- df$gypsy/df$all*100
+df$nongenic_percent <- 100 - df$genic_percent - df$copia_percent - df$gypsy_percent
+
+df$noncoding_bp <- df$genome_size - df$coding_bp
+
+df$genic_percent_genome <- df$coding_bp/df$genome_size*100
+df$copia_percent_genome <- df$copia_bp/df$genome_size*100
+df$gypsy_percent_genome <- df$gypsy_bp/df$genome_size*100
+df$nongenic_percent_genome <- 100 - df$genic_percent_genome - df$copia_percent_genome - df$gypsy_percent_genome
+
+
+```
+
+```{r}
+
+df$count <- c(1,3,2,5,4)
+
+df_eccs <- df
+
+colnames(df_eccs)[which(names(df_eccs) == 'genic')] <- 'Coding'
+colnames(df_eccs)[which(names(df_eccs) == 'noncoding')] <- 'Noncoding'
+colnames(df_eccs)[which(names(df_eccs) == 'gypsy')] <- 'LTR/Gypsy'
+colnames(df_eccs)[which(names(df_eccs) == 'copia')] <- 'LTR/Copia'
+
+
+
+p1 <- ggplot() + 
+    geom_scatterpie(data=df_eccs, aes(y=log10(all), x=count, r=0.45), cols=c('Coding', 'Noncoding', 'LTR/Copia', 'LTR/Gypsy'), color=NA) + theme_classic()+xlab('')+ ylab('Circularome size')+ coord_fixed()+
+  scale_x_continuous(breaks=c(1,3,2,5,4), labels = expression(italic('A. thaliana'), italic('H. sapiens'), italic('O. sativa'), italic('M. oryzae'), italic('S. cerevisiae'))) +
+  scale_y_continuous(breaks=log10(c(50,5000,215000)), labels = c(50,5000,215000))+
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position='none')
+
+p1
+
+
+
+ggsave('test.pdf', plot=p1, width=3.25, height=3.5, device = 'pdf')
+
+layer_scales(p1)$y$range$range[[2]]-layer_scales(p1)$y$range$range[[1]]
+
+ggplot_build(p1)$layout$panel_params[[1]]$y.range
+
+
+
+
+```
+```{r}
+
+df_genomes <- df
+
+colnames(df_genomes)[which(names(df_genomes) == 'coding_bp')] <- 'Coding'
+colnames(df_genomes)[which(names(df_genomes) == 'noncoding_bp')] <- 'Noncoding'
+colnames(df_genomes)[which(names(df_genomes) == 'gypsy_bp')] <- 'LTR/Gypsy'
+colnames(df_genomes)[which(names(df_genomes) == 'copia_bp')] <- 'LTR/Copia'
+
+
+p2 <- ggplot() + 
+    geom_scatterpie(data=df_genomes, aes(y=log10(genome_size), x=count, r=0.45), cols=c('Coding', 'Noncoding', 'LTR/Copia', 'LTR/Gypsy'), color=NA) + theme_classic()+xlab('')+ ylab('Genome size')+ coord_fixed()+
+  scale_x_continuous(breaks=c(1,3,2,5,4), labels = expression(italic('A. thaliana'), italic('H. sapiens'), italic('O. sativa'), italic('M. oryzae'), italic('S. cerevisiae'))) +
+  scale_y_continuous(breaks=log10(c(12000000,40000000,120000000,370000000,3000000000)), labels = c('12 Mbp','40 Mbp','120 Mbp', '370 Mbp', '3 Gbp'))+
+    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(),  legend.position='none')
+
+p2
+
+
+
+ggsave('test2.pdf', plot=p2, width=3.25, height=3.5, device = 'pdf')
+
+layer_scales(p2)$y$range$range[[2]]-layer_scales(p2)$y$range$range[[1]]
+
+ggplot_build(p2)$layout$panel_params[[1]]$y.range
+
+```
+
+```{r}
+both <- ggarrange(p1,p2, ncol=1)
+
+both
+
+ggsave('test3.pdf', plot=both, width=3.25, height=6, device = 'pdf')
+
+
+```
+
+```{r}
+library(cowplot)
+
+both <- align_plots(p1, p2, align="hv", axis="tblr")
+p1x <- ggdraw(both[[1]])
+p2x <- ggdraw(both[[2]])
+
+both_plots <- plot_grid(p1x, p2x, align='hv', ncol=1)
+
+
+ggsave('test.pdf', plot=p1x, width=3.25, height=3.5, device = 'pdf')
+
+ggsave('test2.pdf', plot=p2x, width=3.25, height=3.5, device = 'pdf')
+
+ggsave('test3.pdf', plot=both_plots, width=3.25, height=5, device = 'pdf')
+
+
+```
+
+
+
+```{r}
+
+p1 <- ggplot() + 
+    geom_scatterpie(data=df_eccs, aes(y=log10(all), x=count, r=0.45), cols=c('Coding', 'Noncoding', 'LTR/Copia', 'LTR/Gypsy'), color=NA) + theme_classic()+xlab('')+ ylab('Circularome size')+ coord_fixed()+
+  scale_x_continuous(breaks=c(1,3,2,5,4), labels = expression(italic('A. thaliana'), italic('H. sapiens'), italic('O. sativa'), italic('M. oryzae'), italic('S. cerevisiae'))) +
+  scale_y_continuous(breaks=log10(c(50,5000,215000)), labels = c(50,5000,215000))+
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position='bottom',legend.text=element_text(size=6))
+
+
+leg <- get_legend(p1)
+my_legend <- as_ggplot(leg)
+
+ggsave('legend.pdf', plot = leg, width = 3.25, height = 0.5)
+```
+

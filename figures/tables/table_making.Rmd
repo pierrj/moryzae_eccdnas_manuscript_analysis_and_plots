@@ -5,6 +5,9 @@ output: html_document
 
 ```{r}
 library(gt)
+
+packageVersion('gt')
+citation('gt')
 ```
 
 ```{r}
@@ -40,7 +43,7 @@ sigfigs <- function(x) {
 
 df[] <- lapply(df, sigfigs)
 
-colnames(df) <- c('Read count','Called high quality eccDNAs', 'Called high quality split reads', 'False positives per million reads')
+colnames(df) <- c('Read count','EccDNA forming regions', 'Junction split reads', 'False positives per million reads')
 
 df$rownames <- c('ERR2660591', 'ERR5060418', 'SRR11528297')
 

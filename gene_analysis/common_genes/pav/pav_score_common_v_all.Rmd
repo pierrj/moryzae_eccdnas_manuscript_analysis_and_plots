@@ -7,7 +7,6 @@ output: html_document
 ```{r}
 
 library(data.table)
-library(ResourceSelection)
 library(ggplot2)
 
 df <- data.frame(fread("pav_scores_per_gene"))

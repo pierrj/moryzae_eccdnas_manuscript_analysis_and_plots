@@ -23,6 +23,8 @@ known_effectors <- read.table('known_effectors_fungap_names', header=FALSE, sep=
 
 pav_scores <- read.table('pav_scores_per_gene', header=FALSE, sep='\t')
 
+gene_name_70_15 <- read.table('guy11_gene_names.txt', header=FALSE, sep='\t')
+
 ```
 
 ```{r}
@@ -48,6 +50,15 @@ avr = function(x, output) {
 }
 
 df$known_effector <- apply(df, 1, avr)
+
+seventy = function(x, output) {
+  id = x[[4]]
+  if (is.element(id, gene_name_70_15$V2)){
+    return(as.character(gene_name_70_15$V1[gene_name_70_15$V2 == id]))
+  }
+}
+
+df$gene_name_70_15 <- apply(df,1,seventy)
 
 eccdna = function(x, output) {
   id = x[[4]]

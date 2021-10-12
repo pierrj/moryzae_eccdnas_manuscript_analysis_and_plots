@@ -20,6 +20,15 @@ colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large
 df$normalized_ecc_count <- log10(df$all/(df$read_count/1000000)/(df$genome_size/1000000))
 
 df$study <- sub("_", " ", df$study)
+
+df$study[df$study=='2015 Moller'] <- 'Møller et al 2015'
+df$study[df$study=='2018 Moller'] <- 'Møller et al 2018'
+df$study[df$study=='2017 Lanciano'] <- 'Lanciano et al 2017'
+df$study[df$study=='2020 Wang'] <- 'Wang et al 2021'
+
+df$study <- factor(df$study, levels = c('Møller et al 2015','Lanciano et al 2017','Møller et al 2018','Wang et al 2021','This Study'))
+
+
 df$organism <- sub("Rice_blast", "M. oryzae", df$organism)
 df$organism <- sub("Arabidopsis", "A. thaliana", df$organism)
 df$organism <- sub("Yeast", "S. cerevisiae", df$organism)
@@ -39,7 +48,7 @@ df$symbol <- c(rep('circle', 8), rep('circle',9), rep('circle',16), rep('triangl
 
 p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) + 
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
-  ylab("Log10 Normalized eccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+  ylab("Log10 Normalized \neccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
                                                                                       italic("S. cerevisiae"), italic("A. thaliana"),
                                                                                       italic("O. sativa")))+
   scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
@@ -72,12 +81,14 @@ df$percent_noncoding_genome <- 1 - df$percent_coding_genome
 
 df$copia_circularome_v_genome <- df$percent_copia_eccs/df$percent_copia_genome
 df$gypsy_circularome_v_genome <- df$percent_gypsy_eccs/df$percent_gypsy_genome
-df$noncoding_circularome_v_genome <- df$percent_coding_eccs/df$percent_coding_genome
-df$coding_circularome_v_genome <- df$percent_noncoding_eccs/df$percent_noncoding_genome
+df$coding_circularome_v_genome <- df$percent_coding_eccs/df$percent_coding_genome
+df$noncoding_circularome_v_genome <- df$percent_noncoding_eccs/df$percent_noncoding_genome
 
 df_nohuman_noyeast <- df[df$organism != "H. sapiens" & df$organism != "S. cerevisiae",]
 
 ```
+
+
 
 ```{r}
 
@@ -113,9 +124,26 @@ ggsave("gypsy_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
 
 ```{r}
 
+p <- ggplot(df, aes(x=organism, y=noncoding_circularome_v_genome)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Percent noncoding eccDNAs \nover percent noncoding sequence") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+
+
+p
+
+ggsave("noncoding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
+
+
+```
+
+```{r}
 p <- ggplot(df, aes(x=organism, y=coding_circularome_v_genome)) + 
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
-  ylab("Percent coding eccDNAs over percent CDS") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+  ylab("Percent coding eccDNAs \nover percent coding sequence") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
                                                                                       italic("S. cerevisiae"), italic("A. thaliana"),
                                                                                       italic("O. sativa")))+
   scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
@@ -126,8 +154,8 @@ p
 
 ggsave("coding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
 
-
 ```
+
 
 
 ```{r}
