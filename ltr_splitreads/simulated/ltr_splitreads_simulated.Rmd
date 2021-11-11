@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ltr_splitreads_simulated"
 output: html_document
 ---
@@ -8,7 +29,11 @@ output: html_document
 library(data.table)
 library(ggplot2)
 
+# simulated reads count
 num_simulated_reads <- 2000000*2
+
+
+# info for information for each different ltr retrotransposon circle type
 
 circle_infos <- list()
 
@@ -22,16 +47,22 @@ circle_infos[[3]] <- c('two_ltr_nhej','2-LTR eccDNA \n ')
 
 ```{r}
 
+
+
 for (circle_info in circle_infos){
   
   circle <- circle_info[[1]]
   circle_label <- circle_info[[2]]
+  
+  # read in file as dataframe
   
   df <- data.frame(fread(paste(circle, '_circle_seq_randomized.coverage', sep='')))
   df <- data.frame(df$V2, df$V3)
   colnames(df) <- c('bp','coverage')
   
   df$coverage <- df$coverage/num_simulated_reads
+  
+  # lennghts of all of the elements for x-axis labels
   
   ltr_length <- 539
   element_length <- 539+539+6562
@@ -50,9 +81,11 @@ for (circle_info in circle_infos){
                      breaks=c(ltr_one_start, ltr_one_middle, ltr_one_end, ltr_two_start, ltr_two_middle, ltr_two_end)) + 
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8))+
   theme(axis.ticks.x = element_line(colour=c('black', 'transparent', 'black', 'black',
-                                             'transparent', 'black'))) +
+                                             'transparent', 'black'))) + # transparent tics have to be here to properly space out labels
   ylab('Fraction of simulated reads') + xlab(circle_label)
 
+  # save simulated profile plots
+  
   ggsave(paste(circle,'_simulated_plot_profile.pdf',sep=''), plot=p, width=(6.5/3), height=2)
   
 }
@@ -62,6 +95,8 @@ for (circle_info in circle_infos){
 
 
 ```{r}
+
+# same as above but for MAGGY simulated reads instead of Copia1
 
 for (circle_info in circle_infos){
   

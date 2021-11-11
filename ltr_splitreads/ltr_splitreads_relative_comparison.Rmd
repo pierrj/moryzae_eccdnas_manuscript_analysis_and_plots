@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ltr_splitreads_relative_comparison"
 output: html_document
 ---
@@ -9,12 +30,16 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
+# read in table and rename columns
+
 df <- data.frame(fread('cov_feature_table'))
 
 colnames(df) <- c("feature","ltr_srs", "ltr_ltr_srs", "ltr_internal_srs", "reads", "junction")
 
 
 te_list <- list()
+
+# to keep colors consistent
 
 te_list[[1]] <- c('copia1', "#E6AB02")
 te_list[[2]] <- c('MAGGY', "#7570B3")
@@ -34,6 +59,7 @@ normalized_ltr_ltr_srs_list <- list()
 normalized_ltr_internal_srs_list <- list()
 
 
+# normalize different types of srs by number of reads
 for (te in te_list) {
   element <- te[[1]]
   
@@ -63,6 +89,7 @@ df_normalized_ltr_internal_srs <- data.frame(t(data.frame(normalized_ltr_interna
 
 colnames(df_normalized_ltr_internal_srs) <- c('element','normalized_ltr_internal_srs')
 
+# finicky numeric issues
 df_normalized_ltr_internal_srs$normalized_ltr_internal_srs <- as.numeric(as.character(df_normalized_ltr_internal_srs$normalized_ltr_internal_srs))
 
 df_normalized_ltr_ltr_srs$element <- factor(df_normalized_ltr_ltr_srs$element, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
@@ -83,6 +110,7 @@ colors <- c('copia1' = "#E6AB02",
 'MGRL3' = "#E7298A",
 'PYRET' = "#66A61E")
 
+# barplot for ltr_ltr splitreads
 
 p <- ggplot(data=df_normalized_ltr_ltr_srs, aes(x=element, y=normalized_ltr_ltr_srs, fill=element))+
   geom_bar(stat='identity', position=position_dodge()) + 
@@ -100,6 +128,8 @@ ggsave('ltr_ltr_splitreads_normalized_barplot.pdf', plot = p, width = (6.5/2), h
 ```
 
 ```{r}
+
+# barplot for ltr_internal splitreads
 
 p <- ggplot(data=df_normalized_ltr_internal_srs, aes(x=element, y=normalized_ltr_internal_srs, fill=element))+
   geom_bar(stat='identity', position=position_dodge()) + 

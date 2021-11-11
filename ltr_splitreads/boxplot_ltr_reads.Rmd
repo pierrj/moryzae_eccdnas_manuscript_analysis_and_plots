@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "boxplot_ltr_reads"
 output: html_document
 ---
@@ -7,11 +28,14 @@ output: html_document
 library(data.table)
 library(ggplot2)
 
+# read in table and rename columns
+
 df <- data.frame(fread("te_eccs_per_sample.txt"))
 
 colnames(df) <- c('sample', 'te', 'genome_size', 'total_reads',
                   'te_bp', 'reads_per_te')
 
+# calculate fractions and percentages
 
 df$percent_per_te <- df$reads_per_te/df$total_reads
 
@@ -28,6 +52,8 @@ df$te <- factor(df$te, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 
 
 ```{r}
 
+## keep colors consistent
+
 colors <- c('copia1' = "#E6AB02",
 'MAGGY' = "#7570B3",
 'GYMAG1' = '#03254c',
@@ -35,10 +61,12 @@ colors <- c('copia1' = "#E6AB02",
 'MGRL3' = "#E7298A",
 'PYRET' = "#66A61E")
 
+# percent of reads
+
 p <- ggplot(df, aes(x=te, y=percent_per_te, color = te)) + 
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
   scale_color_manual(values=colors)+
-  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # order axis
   coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
   ylab('Percent of eccDNA \nsequencing reads')
 
@@ -50,16 +78,20 @@ ggsave("percent_reads_per_te_boxplot.pdf", plot = p, width = 3.25, height = 3.5)
 
 ```{r}
 
+# these should all be the same
+
 df_G3_1A <- df[df$sample == 'G3_1A',]
 
 df_G3_1A$percent_genome_per_te <- df_G3_1A$percent_genome_per_te*100
+
+# genome percentages
 
 p <- ggplot(df_G3_1A, aes(x=te, y=percent_genome_per_te, fill=te)) + 
   geom_bar(stat='identity') + theme_classic()+
   scale_fill_manual(values=colors) +
   ylab('Percent of genome')+
   xlab('')+
-  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # reorder
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
 
 p
@@ -71,10 +103,12 @@ ggsave('ltr_te_genome_percentage.pdf', plot = p, width = (6.5/2), height = 2)
 
 ```{r}
 
+# normalized percent of reads
+
 p <- ggplot(df, aes(x=te, y=percent_per_te_normalized, color = te)) + 
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
   scale_color_manual(values=colors)+
-  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
+  scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # reorder
   coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
   ylab('Percent of eccDNA sequencing reads \nover percent of the genome')
 

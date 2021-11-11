@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ecc_caller_v_moller_2018"
 output: html_document
 ---
@@ -7,6 +28,7 @@ output: html_document
 library(data.table)
 library(ggplot2)
 
+# read in files and rename columns
 df <- data.frame(fread('ecc_caller_v_moller_2018_out_table.txt'))
 
 colnames(df) <- c('sample', 'tissue', 'moller_2018_eccs_count', 'ecc_caller_eccs_count', 'ecc_caller_eccs_w_overlap_count', 
@@ -18,10 +40,12 @@ colnames(df) <- c('sample', 'tissue', 'moller_2018_eccs_count', 'ecc_caller_eccs
 
 ```{r}
 
+# calculate percentages
 df$percent_total_overlap <- df$ecc_caller_eccs_w_overlap_count/df$ecc_caller_eccs_count*100
 df$percent_high_overlap <- df$ecc_caller_eccs_highcoverage_w_overlap_count/df$ecc_caller_eccs_highcoverage_count*100
 df$percent_uniq_overlap <- df$ecc_caller_uniq_eccs_w_overlap_count/df$ecc_caller_uniq_eccs_count*100
 
+# make dataframes for plotting
 df_percent_overlap <- data.frame(
   rep(df$tissue,3),
   c(rep('All', 32), rep('High coverage',32), rep('Uniquely mapped',32)),
@@ -41,6 +65,7 @@ df_percent_overlap$tissue <- (
 
 ```{r}
 
+# get means for results section
 mean(df_percent_overlap$percent[df_percent_overlap$type == 'All'])
 mean(df_percent_overlap$percent[df_percent_overlap$type == 'High coverage'])
 
@@ -52,9 +77,11 @@ mean(df_percent_overlap$percent[df_percent_overlap$type == 'Uniquely mapped'])
 
 ```{r}
 
+
+# make plot
 p <- ggplot(df_percent_overlap, aes(x=type, y=percent)) + 
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=tissue))+
-  scale_y_continuous(limits=c(0,100.01))+
+  scale_y_continuous(limits=c(0,100.01))+ # better limits
   ylab("Percent overlap") + xlab("") + 
     theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position = 'bottom')
 
@@ -67,6 +94,7 @@ ggsave("ecc_caller_v_moller_percent_overlap.pdf", plot = p, width = 6.5, height 
 ```
 
 ```{r}
+# muscle and leukocytes separately for raw counts
 
 df_count_muscle <- data.frame(
   df$sample[df$tissue == 'muscle'],
@@ -109,12 +137,13 @@ colnames(df_count_leukocytes) <- c('sample', 'count', 'pipeline')
 
 ```{r}
 
+# plot raw counts for each sample
 p1 <- ggplot(data=df_count_muscle, aes(x=sample, y=count, fill=pipeline))+
   geom_bar(stat='identity', position=position_dodge())+
   theme_classic()+
   ylab('EccDNA forming regions')+
   xlab('Muscle')+
-  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+
+  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+ # colors correspond to sample colors in other supplemental figure
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 p1
@@ -127,12 +156,13 @@ ggsave("ecc_caller_v_moller_muscle_counts.pdf", plot = p1, width = 3.25, height 
 
 ```{r}
 
+# plot raw counts for each sample
 p2 <- ggplot(data=df_count_leukocytes, aes(x=sample, y=count, fill=pipeline))+
   geom_bar(stat='identity', position=position_dodge())+
   theme_classic()+
   ylab('EccDNA forming regions')+
   xlab('Leukocytes')+
-  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+
+  scale_fill_manual(values=c("#00BF7D", "#E76BF3"))+ # colors correspond to sample colors in other supplemental figure
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 p2
@@ -143,6 +173,8 @@ ggsave("ecc_caller_v_moller_leukocytes_counts.pdf", plot = p2, width = 3.25, hei
 ```
 
 ```{r}
+# align both
+
 both <- ggarrange(p1,p2, ncol=2, nrow=1, common.legend = TRUE, legend='bottom')
 
 ggsave('ecc_caller_v_moller_counts.pdf', plot=both, width=6.5, height=3.5, device = 'pdf')

@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ct_expression_micro_dnas_analysis"
 output: html_document
 ---
@@ -11,9 +32,13 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
+# read in data and rename columns
+
 df_rpkm <- data.frame(fread('G3.RPKMvsSRs'))
 
 colnames(df_rpkm) <- c("gene", "rpkm", "srs")
+
+# remove zeros and log transform
 
 df_rpkm <- df_rpkm[df_rpkm$srs != 0 & df_rpkm$rpkm != 0,]
 
@@ -21,16 +46,20 @@ df_rpkm$rpkm <- log10(df_rpkm$rpkm)
 
 df_rpkm$srs <- log10(df_rpkm$srs)
 
+# pearson correlation here
+
 cor_test <- cor.test(df_rpkm$rpkm, df_rpkm$srs, method=c("pearson"))
 cor <-  round(cor_test$estimate[[1]], digits = 4)
 pvalue <- round(cor_test$p.value[[1]], digits = 4)
 
+# pearson correlation plot with 2d scatter plot
+
 p <- ggplot(df_rpkm, aes(x=rpkm, y=srs)) +
-    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") + # make 2d density plot
     labs(x="Log 10 RPKM", y="Log 10 junction split \nreads per gene") + theme_classic() +
     labs(fill = "Gene density")+
     geom_smooth(method='lm', color='red')+
-    labs(title=paste("Pearson's correlation = ", cor, ", p-value = ", pvalue, sep=''))+
+    labs(title=paste("Pearson's correlation = ", cor, ", p-value = ", pvalue, sep=''))+ # add correlation value to plot
     theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.text=element_text(size=6), 
           plot.title=element_text(size=8, hjust=0.5))
 
@@ -43,6 +72,9 @@ ggsave("ct_expression_micro_dnas_rpkm_plot.pdf", plot = p, width = 6.5, height =
 
 
 ```{r}
+
+# remake df but this time dont log transform and dont remove zeros
+
 df_rpkm <- data.frame(fread('G3.RPKMvsSRs'))
 
 colnames(df_rpkm) <- c("gene", "rpkm", "srs")
@@ -50,17 +82,20 @@ colnames(df_rpkm) <- c("gene", "rpkm", "srs")
 df_rpkm$rank_rpkm <- rank(df_rpkm$rpkm)
 df_rpkm$rank_srs <- rank(df_rpkm$srs)
 
-cor_test <- cor.test(df_rpkm$rpkm, df_rpkm$srs, method=c("kendall"))
+# calculate rank correlation
+
+cor_test <- cor.test(df_rpkm$rpkm, df_rpkm$srs, method=c("spearman"))
 cor <-  round(cor_test$estimate[[1]], digits = 4)
 pvalue <- round(cor_test$p.value[[1]], digits = 4)
 
+# spearman rank correlation with ranks on x and y axis
 
 p <- ggplot(df_rpkm, aes(x=rank_rpkm, y=rank_srs)) +
-    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") + # make 2d density plot
     labs(x="Rank RPKM", y="Rank junction split \nreads per gene") + theme_classic() +
     labs(fill = "Gene density")+
     geom_abline(intercept=0, slope=1, linetype=3)+
-    labs(title=paste("Spearman's rank correlation = ", cor, ", p-value = ", pvalue, sep=''))+
+    labs(title=paste("Spearman's rank correlation = ", cor, ", p-value = ", pvalue, sep=''))+ # paste rank correlation
     theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.text=element_text(size=6), 
           plot.title=element_text(size=8, hjust=0.5))
 
@@ -83,6 +118,8 @@ summary(lm(df_rpkm$srs ~ df_rpkm$rpkm))
 ```
 
 ```{r}
+
+# put plots together
 par(mfrow=c(2,2))
 plot(lm(df_rpkm$srs ~ df_rpkm$rpkm))
 
@@ -94,19 +131,25 @@ dev.off()
 
 
 ```{r}
+# genes per 100kb now instead
+
 df_genesper100kb <- data.frame(fread('G3.SRsvsgenesper100kb'))
 
 colnames(df_genesper100kb) <- c("scaffold", "start", "end", "gene_count", "srs")
+
+# pearson correlation
 
 cor_test <- cor.test(df_genesper100kb$gene_count, df_genesper100kb$srs, method=c("pearson"))
 cor <-  round(cor_test$estimate[[1]], digits = 4)
 pvalue <- round(cor_test$p.value[[1]], digits = 4)
 
+# genes per 100kb and pearson correlation
+
 p <- ggplot(df_genesper100kb, aes(x=gene_count, y=srs)) +
     geom_point() +
     labs(x="Genes per 100kb", y="Junction split reads per 100kb") + theme_classic() +
     geom_smooth(method='lm', color='red')+
-    labs(title=paste("Pearson's correlation = ", cor, ", p-value = ", pvalue, sep=''))+
+    labs(title=paste("Pearson's correlation = ", cor, ", p-value = ", pvalue, sep=''))+ # add correlation title to plot
     theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.text=element_text(size=6), 
           plot.title=element_text(size=8, hjust=0.5))
 
@@ -117,6 +160,8 @@ ggsave("ct_expression_micro_dnas_genesperk100kb_plot.pdf", plot = p, width = 6.5
 ```
 
 ```{r}
+
+# spearman rank instead
 
 df_genesper100kb <- data.frame(fread('G3.SRsvsgenesper100kb'))
 
@@ -168,6 +213,9 @@ dev.off()
 
 
 ```{r}
+
+# srs versus gene count per scaffold now instead of per bin
+
 df_genesperscaffold <- data.frame(fread('G3.SRsvsgenesperk100kbperscaffold'))
 
 colnames(df_genesperscaffold) <- c("scaffold", "gene_count", "srs")

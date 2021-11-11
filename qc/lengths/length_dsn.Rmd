@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "length_dsn"
 output: html_document
 ---
@@ -10,6 +31,8 @@ library(ggplot2)
 ```
 
 ```{r}
+# read in candidate eccdna regions called with uniquely mapped reads and with multi-mapped reads
+
 df_unique <- data.frame(fread('unique_parallel.confirmed.length_dsn'))
 
 df_mapq0 <- data.frame(fread('mapq0_parallel.confirmed.length_dsn'))
@@ -17,6 +40,7 @@ df_mapq0 <- data.frame(fread('mapq0_parallel.confirmed.length_dsn'))
 ```
 
 ```{r}
+#histogram of uniquely mapped candidate eccdnas
 p <- ggplot() + aes(df_unique$V1) + geom_histogram(binwidth=200, colour="black", fill="white", size = 0.25) + theme_classic()+
   scale_x_continuous(limits = c(0,10000)) + ylab('Frequency') + xlab('EccDNA length (bp)')+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
@@ -28,6 +52,8 @@ ggsave("length_dsn_uniquely_mapped.pdf", plot = p, width = 2, height = 2)
 ```
 
 ```{r}
+
+#histogram of multi mapped candidate eccdnas
 
 options(scipen = 999)
 

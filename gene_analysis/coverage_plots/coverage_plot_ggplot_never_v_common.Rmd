@@ -116,15 +116,14 @@ known_genes_table_absent <- known_genes_table[known_genes_table$splitreads == mi
 
 ```{r}
 
-known_genes_table[known_genes_table$name_70_15 == 'MGG_00912',]
+known_genes_table[known_genes_table$name_70_15 == 'PTP2',]
+
+known_genes_table[known_genes_table$gene == 'gene_05579.t1',]
 
 df[df$gene == 'gene_05579.t1',]
 
 
-MGG_04843
-
-
-known_genes_table[known_genes_table$name_70_15 == 'TRF1',]
+known_genes_table[known_genes_table$name_70_15 == 'MYO1',]
 
 df[df$gene == 'gene_02216.t1',]
 
@@ -160,7 +159,7 @@ p1 <- ggplot() +
   geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
                    yend=log10(common_genes_cutoff)),colour='#E6AB02')+
       geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
@@ -255,7 +254,7 @@ p2 <- ggplot() +
                 y=log10(common_genes_cutoff), 
                 yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
         geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +

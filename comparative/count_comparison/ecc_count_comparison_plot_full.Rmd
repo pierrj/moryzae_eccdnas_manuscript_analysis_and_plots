@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ecc_count_comparison_plot_full"
 output: html_document
 ---
@@ -10,6 +31,8 @@ library(dplyr)
 library(cowplot)
 library(ggpubr)
 
+# read in count comparison table and rename columns
+
 df <- data.frame(fread("ecc_count_comparison_w_metadata.txt"))
 
 colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large', 'all', 'read_count',
@@ -19,6 +42,7 @@ colnames(df) <-c('sample','genic','noncoding', 'copia', 'gypsy', 'micro', 'large
 # normalized ecc_count is log10 of count of all eccdnas per million reads per mega basepair
 df$normalized_ecc_count <- log10(df$all/(df$read_count/1000000)/(df$genome_size/1000000))
 
+# renaming studies and organisms
 df$study <- sub("_", " ", df$study)
 
 df$study[df$study=='2015 Moller'] <- 'Møller et al 2015'
@@ -36,6 +60,8 @@ df$organism <- sub("Human", "H. sapiens", df$organism)
 df$organism <- sub("Rice", "O. sativa", df$organism)
 df$organism <- sub("_", " ", df$organism)
 df$organism <- factor(df$organism, levels = c("M. oryzae", "H. sapiens", "S. cerevisiae", "A. thaliana", "O. sativa"))
+
+# make symbols for diffrent sample types within studies
 df$symbol <- c(rep('circle', 8), rep('circle',9), rep('circle',16), rep('triangle',16), rep('circle',2), rep('empty',2), rep('triangle',3), rep('circle',2),
                     rep('diamond',2), rep('circle',4), rep('square',4), rep('triangle',2), rep('diamond',2), rep('diamond',3), rep('square',3), 
                rep('triangle',3), rep('circle',3))
@@ -51,7 +77,8 @@ p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) +
   ylab("Log10 Normalized \neccDNA Count") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
                                                                                       italic("S. cerevisiae"), italic("A. thaliana"),
                                                                                       italic("O. sativa")))+
-  scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  scale_shape_manual(values=c(19,18,1,15,17)) + #shapes for sample types
+  guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 p
 
@@ -65,7 +92,9 @@ ggsave("ecc_count_comparison_plot.pdf", plot = p, width = 3.25, height = 3.5)
 
 ```{r}
 
-## exclude humans here
+## exclude humans and yeast here because of too few copia and gypsy circles
+
+# calculate percentage
 
 df$percent_copia_eccs <- df$copia / df$all
 df$percent_gypsy_eccs <- df$gypsy / df$all
@@ -98,7 +127,8 @@ p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=copia_circularome_v_genome)) +
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
   ylab("Percent Copia eccDNAs over \npercent Copia elements") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("A. thaliana"), italic("O. sativa")))+
   scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip() +
-  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+ # keep study colors
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 p
 
@@ -113,7 +143,8 @@ p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=gypsy_circularome_v_genome)) +
   geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
   ylab("Percent Gypsy eccDNAs over \npercent Gypsy elements") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("A. thaliana"), italic("O. sativa")))+
   scale_shape_manual(values=c(19,18,1,15,17)) + guides(color='none', shape = "none") + coord_flip()+
-  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  scale_color_manual(values=c("#A3A500", "#00B0F6", "#E76BF3"))+ # keep study colors
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 p
 
@@ -159,6 +190,8 @@ ggsave("coding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
 
 
 ```{r}
+
+# anova for coding percentage of circularome
 one.way <- aov(coding_circularome_v_genome ~ organism, data = df)
 
 summary(one.way)
@@ -170,6 +203,8 @@ TukeyHSD(one.way)
 
 
 ```{r}
+
+## just make a legend
 
 #guide_legend("Study")
 

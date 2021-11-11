@@ -1,4 +1,25 @@
-library(readr) ## the ggplot 'universe' of packages
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+library(readr)
 library(reshape2)
 library(tidyr)
 
@@ -71,10 +92,12 @@ p <- ggplot(raw_data, aes(x=timepoint, y=fraction)) + geom_boxplot(outlier.shape
 
 p
 
-p <- ggplot(aggregate_raw_data, aes(x=Group.3, y=fraction)) + geom_jitter(size=0.5, width = 0.2) + theme_classic() + ylab('Linear DNA fraction') + xlab('') +
-  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
-
-p
-
-
 ggsave("qpcr_linear_dna_depletion_boxplot.pdf", plot = p, width = 2, height = 2)
+
+
+# p <- ggplot(aggregate_raw_data, aes(x=Group.3, y=fraction)) + geom_jitter(size=0.5, width = 0.2) + theme_classic() + ylab('Linear DNA fraction') + xlab('') +
+#   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
+# 
+# p
+
+

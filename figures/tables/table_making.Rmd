@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "table_making"
 output: html_document
 ---
@@ -12,30 +33,13 @@ citation('gt')
 
 ```{r}
 
-df <- data.frame(t(data.frame(c(2660, 1591),
-                 c(842, 697),
-                 c(2438, 1409))))
-
-colnames(df) <- c('This study', 'Overlapping with Moller et al 2018')
-
-df$rownames <- c('No lowq', 'No lowq, more than 10 split reads', 'No lowq, uniquely mapped only')
-
-gt <- gt(df, rowname_col = 'rownames')
-
-gt <- cols_align(gt, align = 'center', columns = everything())
-
-gt <- cols_width(gt, everything() ~ px(150))
-
-gtsave(gt, 'ecc_caller_v_moller_et_al.png')
-
-```
-
-```{r}
+## WGS false positive table
 
 df <- data.frame(t(data.frame(c(222477896, 12, 195, 195/222477896*1000000),
                  c(73760888, 15, 210, 210/73760888*1000000),
                  c(168585640, 5, 66, 66/168585640*1000000))))
 
+# fix sigfigs
 sigfigs <- function(x) {
   sigfig <- formatC(signif(x,digits=4), digits=4,format="fg", flag="#")
  return(sigfig)
@@ -46,6 +50,8 @@ df[] <- lapply(df, sigfigs)
 colnames(df) <- c('Read count','EccDNA forming regions', 'Junction split reads', 'False positives per million reads')
 
 df$rownames <- c('ERR2660591', 'ERR5060418', 'SRR11528297')
+
+## just table formatting
 
 gt <- gt(df, rowname_col = 'rownames')
 
@@ -62,6 +68,8 @@ gtsave(gt, 'ecc_caller_on_wgs_data.png')
 ```
 
 ```{r}
+
+## info directly from methods sections of these papers
 
 df <- data.frame(t(data.frame(c('Plasmid Mini AX (A&A Biotechnology)','Plasmid Mini AX (A&A Biotechnology)',
                                 'Plasmid-Safe ATP-dependent DNase (Epicentre); NotI (Fermentas)', 'REPLI-g Mini Kit (Qiagen)' ),
@@ -80,6 +88,8 @@ df <- data.frame(t(data.frame(c('Plasmid Mini AX (A&A Biotechnology)','Plasmid M
 colnames(df) <- c('DNA extraction', 'Column purification', 'Linear DNA degradation', 'Circular DNA amplification')
 
 df$rownames <- c('Moller et al 2015', 'Lanciano et al 2017', 'Moller et al 2018', 'Wang et al 2021', 'This Study (Magnaporthe oryzae)', 'This Study (Oryza sativa)')
+
+## just table formatting
 
 gt <- gt(df, rowname_col = 'rownames')
 

@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "ltr_splitreads_correlation_final"
 output: html_document
 ---
@@ -8,9 +29,13 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
+# read in table and rename columns
+
 df <- data.frame(fread('cov_feature_table'))
 
 colnames(df) <- c("feature","ltr_srs", "ltr_ltr_srs", "ltr_internal_srs", "reads", "junction")
+
+# log10 reads and splitreads
 
 df$reads <- log10(df$reads)
 
@@ -20,6 +45,8 @@ df$ltr_internal_srs <- log10(df$ltr_internal_srs)
 
 df <- df[df$reads != -Inf,]
 
+# remove zeroes
+
 df <- df[!(grepl('LTR', df$feature) &  df$ltr_ltr_srs == -Inf),]
 
 df <- df[!(grepl('INTERNAL', df$feature) &  df$ltr_internal_srs == -Inf),]
@@ -27,6 +54,8 @@ df <- df[!(grepl('INTERNAL', df$feature) &  df$ltr_internal_srs == -Inf),]
 
 
 te_list <- list()
+
+# keep colors consistent
 
 te_list[[1]] <- c('copia1', 'Copia1', 'LTR', 'ltr_ltr_srs', "#E6AB02")
 te_list[[2]] <- c('copia1', 'Copia1', 'INTERNAL', "ltr_internal_srs", "#E6AB02")
@@ -47,6 +76,8 @@ te_list[[12]] <- c('PYRET', 'PYRET', 'INTERNAL', "ltr_internal_srs", "#66A61E")
 ```
 
 ```{r}
+
+# testing specific elements
 element <- 'MGRL3'
 
 segment <- 'INTERNAL'
@@ -80,6 +111,8 @@ p <- ggplot(df_subset, aes_string(x='reads', y=segment_srs)) +
 
 ```{r}
 
+# make plots for individual tes and print out cor values
+
 for (te in te_list) {
   element <- te[[1]]
   
@@ -96,6 +129,8 @@ for (te in te_list) {
 
   df_subset <- df_subset[grepl(segment, df_subset$feature),]
   
+  # correlation test and round for printing
+  
   cor_test <- cor.test(df_subset[['reads']], df_subset[[segment_srs]], method=c("pearson"))
   cor <- round(cor_test$estimate[[1]], digits = 4)
   
@@ -104,7 +139,7 @@ for (te in te_list) {
     geom_point(size=0.5, color = element_color) +
     #geom_smooth(method='lm', color='red') +
     labs(x="Log10 reads per million", y="Log10 split reads per million") + theme_classic() + 
-    labs(title=element_label, subtitle=paste('cor = ', cor, sep=''))+
+    labs(title=element_label, subtitle=paste('cor = ', cor, sep=''))+ # paste correlation to plot
     theme(axis.text=element_text(size=6), axis.title=element_text(size=8), plot.title=element_text(size=8, hjust=0.5), plot.subtitle=element_text(size=6, hjust=0.5))
   
   #center <- (layer_scales(p)$x$range$range[[2]] - layer_scales(p)$x$range$range[[1]])/2 + layer_scales(p)$x$range$range[[1]]
@@ -112,6 +147,8 @@ for (te in te_list) {
 
   #p <- p + annotate(geom = 'text', label = paste('cor = ', cor, sep=''), x = center, y = Inf, hjust = 0.5, vjust = 1, size = 2)
 
+  
+  # save correlation plots
   
   ggsave(paste(element,'_',segment,'_splitreads_correlation.pdf',sep=''), plot = p, width = (6.5/3), height = 2)
   
@@ -125,22 +162,5 @@ for (te in te_list) {
 }
 
 
-```
-
-
-
-```{r}
-
-
-p <- ggplot(df_rpkm, aes(x=rpkm, y=srs)) + geom_smooth(method='lm', color='red') +
-    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
-    labs(x="Log10 RPKM", y="Log10 junction split \nreads per gene") + theme_classic() + 
-    labs(fill = "Gene density")+
-    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.text=element_text(size=6))
-
-
-p
-
-ggsave("ct_expression_large_eccdnas_rpkm_plot.pdf", plot = p, width = 6.5, height = 3)
 ```
 
