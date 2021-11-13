@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "coverage_plot_ggplot_never_v_common"
 output: html_document
 ---
@@ -14,11 +35,15 @@ library(ggrepel)
 
 ```{r}
 
+# genes
 df <- data.frame(fread('guy11_fungap_out_12_28_20.bed'))
 
+# encompassing split reads per gene
 df_splitreads <- data.frame(fread('G3.normalized.splitreadspergene'))
 
 colnames(df) <- c('CHROMOSOME', 'start', 'end', 'gene')
+
+## a lot of work to draw one dot at the middle of each gene
 
 df$CHROMOSOME <- as.numeric(substring(df$CHROMOSOME, 11, 12))
                           
@@ -30,6 +55,7 @@ df$status <- NA
 
 df$status[df$splitreads == 0] <- 'eccDNA-absent'
 
+# call common and never found genes based off previously identified cutoffs
 
 n_common_genes <- floor(length(df$splitreads[df$splitreads != 0])/10)
 
@@ -45,11 +71,13 @@ df
 
 ```{r}
 
+# scaffold and scaffold lengths
 df_chromsizes <- data.frame(fread('guy11_genome_baoetal2017.chromsizes'))
 
 colnames(df_chromsizes) <- c('chrom', 'size')
 df_chromsizes$chrom <- as.numeric(substring(df_chromsizes$chrom, 11, 12))
 
+## count base pairs throughout the gneome according to which scaffold they are on, this is to plot the genome in a way that makes sense
 
 v <- numeric()
 
@@ -75,6 +103,7 @@ df$BASE_TOTAL <- apply(df, 1, f)
 
 df$status <- factor(df$status, levels=c('eccDNA-absent', 'Other genes', 'eccDNA-associated'))
 
+# so we can take the log of zeroes
 df$splitreads[df$splitreads == 0] <- 0.001
 
 df$splitreads <- log10(df$splitreads)
@@ -82,6 +111,8 @@ df$splitreads <- log10(df$splitreads)
 ```
 
 ```{r}
+# add known genes name
+
 known_genes_files = 'guy11_70_15_gene_names.txt'
 known_genes_table = read.table(known_genes_files, header=FALSE, sep='\t')
 
@@ -101,11 +132,14 @@ colnames(known_genes_table) <- c('name_70_15', 'gene', 'splitreads', 'BASE_TOTAL
 
 known_genes_table$name_70_15 <- as.character(known_genes_table$name_70_15)
 
+# filter to only named genes
 known_genes_table <- known_genes_table[known_genes_table$name_70_15 != 'unknown',]
 
 known_genes_table <- known_genes_table[! startsWith(known_genes_table$name_70_15,'MGG_'),]
 
 known_genes_table <- known_genes_table[! startsWith(known_genes_table$name_70_15,'MGCH'),]
+
+# sort genes by absent or associated
 
 known_genes_table_associated <- known_genes_table[known_genes_table$splitreads > -0.4279071,]
 
@@ -113,24 +147,9 @@ known_genes_table_absent <- known_genes_table[known_genes_table$splitreads == mi
 
 ```
 
-
 ```{r}
 
-known_genes_table[known_genes_table$name_70_15 == 'PTP2',]
-
-known_genes_table[known_genes_table$gene == 'gene_05579.t1',]
-
-df[df$gene == 'gene_05579.t1',]
-
-
-known_genes_table[known_genes_table$name_70_15 == 'MYO1',]
-
-df[df$gene == 'gene_02216.t1',]
-
-```
-
-
-```{r}
+## coverage plot for first few scaffolds
 
 start_subset <- 1
 
@@ -159,36 +178,32 @@ p1 <- ggplot() +
   geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
                    yend=log10(common_genes_cutoff)),colour='#E6AB02')+
       geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) + # repel is great here to make the labels not run into each other much
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
-                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 
   theme_classic() + xlab('Scaffold') +
   ylim(0, max(df$splitreads)) +
-  theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+
-  theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+
+  theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+ # need to draw invisible labels so the plot looks pretty
+  theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+ # need to draw invisible ticks so the plot looks pretty
   scale_y_continuous(breaks=-3:1, labels=c("0","0.01", "0.1", "1", "10"), limits = c(-3,1)) +
   ylab('Normalized encompassing \nsplit read count')+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6)) + guides(colour = guide_legend(override.aes = list(size=2))) +
   theme(axis.line.y = element_blank()) +
   annotate(geom = "segment", x = -Inf, xend = -Inf, y = -Inf, yend = Inf) +
-  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) +
+  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) + # chop up y axis which is not continuous because of zeroes
   scale_colour_manual(breaks = c("eccDNA-absent", "Other genes", "eccDNA-associated"),
                       values = c("eccDNA-absent" = '#03254c', "Other genes" = "grey", "eccDNA-associated" = "#E6AB02"))
 
 
-
-
-  # geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])), 
-  #               y=log10(common_genes_cutoff), 
-  #               yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
-
-# should be 5000 for high res
 ggsave('test.tiff', plot=p1, width=6.5, height=1.75, device = 'tiff', dpi = 1000)
 
 ```
 
 ```{r}
+
+## coverage plot for first remaining scaffolds
+
 
 start_subset <- 6
 
@@ -220,7 +235,8 @@ for (scaffold in start_subset:end_subset){
   labs <- c(labs, scaffold)
 }
 
-#tick colors
+#tick colors to make it easier
+# especially since we arent labeling every label because of the extra, closely clusetered scaffolds
 
 tick_colors <- character()
 label_colors <- character()
@@ -254,20 +270,20 @@ p2 <- ggplot() +
                 y=log10(common_genes_cutoff), 
                 yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
         geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +# repel is great here to make the labels not run into each other much
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
-                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +  # setting ticks is really hard here 
   theme_classic() + xlab('Scaffold') +
   ylim(0, max(df$splitreads)) +
-  theme(axis.text.x = element_text(colour=label_colors))+
-  theme(axis.ticks.x = element_line(colour=tick_colors))+
+  theme(axis.text.x = element_text(colour=label_colors))+# need to draw invisible labels so the plot looks pretty
+  theme(axis.ticks.x = element_line(colour=tick_colors))+# need to draw invisible ticks so the plot looks pretty
   scale_y_continuous(breaks=-3:1, labels=c("0","0.01", "0.1", "1", "10"), limits = c(-3,1)) +
   ylab('Normalized encompassing \nsplit read count')+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6))+ guides(colour = guide_legend(override.aes = list(size=2)))+
   theme(axis.line.y = element_blank()) +
   annotate(geom = "segment", x = -Inf, xend = -Inf, y = -Inf, yend = Inf) +
-  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1)+
+  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1)+# chop up y axis which is not continuous because of zeroes
   scale_colour_manual(breaks = c("eccDNA-absent", "Other genes", "eccDNA-associated"),
                       values = c("eccDNA-absent" = '#03254c', "Other genes" = "grey", "eccDNA-associated" = "#E6AB02"))
 
@@ -278,6 +294,8 @@ ggsave('test2.tiff', plot=p2, width=6.5, height=1.75, device = 'tiff', dpi = 100
 ```
 
 ```{r}
+
+## ggarrange so they look well aligned
 both <- ggarrange(p1,p2, ncol=1, nrow=2, common.legend = TRUE, legend='bottom')
 
 ggsave('test3.tiff', plot=both, width=6.5, height=3.5, device = 'tiff', dpi = 1000)

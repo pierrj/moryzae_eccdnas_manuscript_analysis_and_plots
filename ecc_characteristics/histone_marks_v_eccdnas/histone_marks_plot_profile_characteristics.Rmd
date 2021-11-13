@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "histone_marks_characteristics"
 output: html_document
 ---
@@ -9,8 +30,11 @@ library(ggplot2)
 ```
 
 ```{r}
+# read in tab output from plot profile
+
 df_read <- t(data.frame(fread("gc.tab")))
 
+## need to do a lot of rearranging to get it into a format that works for ggplot
 df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
                   val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], df_read[3:nrow(df_read),5],
                         df_read[3:nrow(df_read),6], df_read[3:nrow(df_read),7]),
@@ -24,6 +48,8 @@ df$val <- as.numeric(as.character(df$val))
 df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs", "Methylated genes", "Nonmethylated genes",
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
+
+# plot gc content across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('GC content')  +
@@ -40,6 +66,8 @@ ggsave('characteristics_gc.pdf', plot=p, width=3.25, height=2)
 ```{r}
 df_read <- t(data.frame(fread("H3K27me3_1.tab")))
 
+## need to do a lot of rearranging to get it into a format that works for ggplot
+
 df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
                   val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], 
                         df_read[3:nrow(df_read),5], df_read[3:nrow(df_read),6], df_read[3:nrow(df_read),7],
@@ -54,6 +82,8 @@ df$val <- as.numeric(as.character(df$val))
 df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs", "Methylated genes", "Nonmethylated genes",
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
+
+# ratio of H3K27me across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27me3')  +
@@ -70,6 +100,8 @@ ggsave('characteristics_h3k27me3.pdf', plot=p, width=3.25, height=2)
 ```{r}
 df_read <- t(data.frame(fread("H3K36me3_1.tab")))
 
+## need to do a lot of rearranging to get it into a format that works for ggplot
+
 df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
                   val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], df_read[3:nrow(df_read),5],
                         df_read[3:nrow(df_read),6], df_read[3:nrow(df_read),7]),
@@ -83,6 +115,8 @@ df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
 
+# ratio of H3K36me across tracks
+
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K36me3')  +
   guides(color=guide_legend(nrow=3,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
@@ -95,6 +129,8 @@ ggsave('characteristics_h3k36me3.pdf', plot=p, width=3.25, height=2)
 
 ```{r}
 df_read <- t(data.frame(fread("H3K27ac_1.tab")))
+
+## need to do a lot of rearranging to get it into a format that works for ggplot
 
 df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
                   val=c(df_read[3:nrow(df_read),2], df_read[3:nrow(df_read),3], df_read[3:nrow(df_read),4], 
@@ -110,6 +146,8 @@ df$val <- as.numeric(as.character(df$val))
 df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs", "Methylated genes", "Nonmethylated genes",
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
+
+# ratio of H3K27ac across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27ac')  +

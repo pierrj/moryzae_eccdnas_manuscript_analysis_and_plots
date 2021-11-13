@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "go_enrichment_neverfound_kde_all"
 output: html_document
 ---
@@ -11,6 +32,8 @@ library(ggpubr)
 ```
 
 ```{r}
+
+# this function takes a processed pannzer output and a list of genes (to be randomly selected) and returns the number of those genes associated with each go id
 get_go_observed <- function(x, ont) {
   geneList <- factor(as.integer(geneNames %in% x))
   names(geneList) <- geneNames
@@ -18,6 +41,7 @@ get_go_observed <- function(x, ont) {
   return(termStat(GOdata)$Significant)
 }
 
+## make a table and perform chi square test, report -log 10 pvalue
 chisquare_test <- function(x){
   o_s_a <- as.numeric(x[[2]])
   o_s_n <- num_observed_sig_genes - o_s_a
@@ -33,6 +57,7 @@ chisquare_test <- function(x){
   return(-log10(pchisq(chi, 1, lower.tail = FALSE)))
 }
 
+# calculate ratio of genes observed in the category of interest over genes expected in the category and return that ratio
 observed_expected_ratio <- function(x){
   o_s_a <- as.numeric(x[[2]])
   o_s_n <- num_observed_sig_genes - o_s_a
@@ -53,6 +78,8 @@ localGetTermsDefinition<-getFromNamespace(".getTermsDefinition", "topGO")
 
 
 ```{r}
+
+## read in pannzer output with go ids
 geneID2GO <-  readMappings("G3.filtered.GO.awk.txt")
 
 geneNames <- names(geneID2GO)
@@ -69,22 +96,30 @@ names(geneList) <- geneNames
 ontologies = c("CC", "BP", "MF")
 
 for (ontology in ontologies) {
+  
+  # get GO data for observed gene list, eccdna-associated genes in this case
 
   GOdata <- suppressMessages(new("topGOdata", ontology = ontology, allGenes = geneList, annot = annFUN.gene2GO, 
                                  gene2GO = geneID2GO))
   
   observed <- termStat(GOdata)$Significant
   
+  # these are all of the genes with go annotations
   annotated <- termStat(GOdata)$Annotated
   
+  # grab the full term descriptions for each go id
   terms <- localGetTermsDefinition(rownames(termStat(GOdata)), ontology(GOdata), numChar=1000)
   
+  # simple gene lengths 
   df_lengths <- data.frame(fread('guy11_fungap_out_12_28_20.gene_lengths'))
   
   colnames(df_lengths) <- c('gene', 'length')
   
+  # lengths of observed gene list
+  
   df_lengths_siggenes <- df_lengths[df_lengths$gene %in% sigGenes(GOdata), ]
   
+  # make KDE function of observed genes
   d <- density(df_lengths_siggenes$length)
   
   density_function <- approxfun(d)
@@ -93,21 +128,30 @@ for (ontology in ontologies) {
   
   feasible_genes_lengths <- df_lengths$length[df_lengths$gene %in% feasible_genes ]
   
+  ## replace NAs with zeroes, these genes are larger than what would ever be expected in common genes
+  
   probabilities <- density_function(feasible_genes_lengths)
+  
+  ## sample genes at random, weighted by their length based off the KDE function
   
   sampled_genes <- data.frame(replicate(100, sample(feasible_genes, size = nrow(df_lengths_siggenes), replace = FALSE, 
                                                     prob = probabilities)))
   
+  # call go terms for sampled genes to get expected number of genes for each go id
   x <- lapply(sampled_genes, get_go_observed, ont=ontology)
   
   df_x <- data.frame(x)
   
   expected <- rowMeans(df_x)
   
+  # make data frame of observed vs expected
+  
   df_go_permuted <- data.frame(annotated, observed, expected, terms)
   
   rownames(df_go_permuted) <- rownames(termStat(GOdata))
   
+  
+  # get count for observed vs expected
   num_genes <- numGenes(GOdata)
   num_observed_sig_genes <- numSigGenes(GOdata)
   num_obseved_notsig_genes <- num_genes-num_observed_sig_genes
@@ -115,6 +159,7 @@ for (ontology in ontologies) {
   num_expected_sig_genes <- num_observed_sig_genes
   num_expected_notsig_genes <- num_genes - num_expected_sig_genes
   
+  # perform chi square test for each go term and calculate the observed/expected ratio
   df_go_permuted$chi <- apply(df_go_permuted, 1, chisquare_test)
   
   df_go_permuted$observed_expected_ratio <- apply(df_go_permuted,1,observed_expected_ratio)
@@ -122,6 +167,7 @@ for (ontology in ontologies) {
   # omit NAs from chisquare test
   df_ontology_name <- paste('filtered_df_', ontology, sep = "")
   subset <- na.omit(df_go_permuted[df_go_permuted$annotated > 5 & df_go_permuted$chi > -log10(0.05),])
+  # write csv with all results
   write.csv(subset,paste("filtered_df_all_hits_", ontology, ".csv", sep=""))
   # sort and subset to top20
   assign(df_ontology_name, head(subset[order(-subset$chi),], 20))
@@ -131,11 +177,12 @@ for (ontology in ontologies) {
 
 ```{r}
 
+## plot once for cc, bp and mf
 
 p_cc <- ggplot(filtered_df_CC, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
-  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
   xlab("Observed count over expected count") + ylab("Cellular componet") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 ggsave("neverfound_go_enrichment_cc.pdf", plot = p_cc, width = 6.5, height = 3.5)
@@ -144,7 +191,7 @@ ggsave("neverfound_go_enrichment_cc.pdf", plot = p_cc, width = 6.5, height = 3.5
 p_bp <- ggplot(filtered_df_BP, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
-  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
   xlab("Observed count over expected count") + ylab("Biological pathway") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 ggsave("neverfound_go_enrichment_bp.pdf", plot = p_bp, width = 6.5, height = 3.5)
@@ -153,7 +200,7 @@ ggsave("neverfound_go_enrichment_bp.pdf", plot = p_bp, width = 6.5, height = 3.5
 p_mf <- ggplot(filtered_df_MF, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
-  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
   xlab("Observed count over expected count") + ylab("Molecular function") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
 
 ggsave("neverfound_go_enrichment_mf.pdf", plot = p_mf, width = 6.5, height = 3.5)
