@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "coverage_plot_ggplot_effectors"
 output: html_document
 ---
@@ -14,12 +35,15 @@ library(ggpubr)
 
 ```{r}
 
+# genes
 df <- data.frame(fread('guy11_fungap_out_12_28_20.bed'))
 
+# encompassing split reads per gene
 df_splitreads <- data.frame(fread('G3.normalized.splitreadspergene'))
 
 colnames(df) <- c('CHROMOSOME', 'start', 'end', 'gene')
 
+## a lot of work to draw one dot at the middle of each gene
 df$CHROMOSOME <- as.numeric(substring(df$CHROMOSOME, 11, 12))
                           
 df$middle <- df$start + (df$end - df$start) * 0.5
@@ -31,6 +55,7 @@ df$status <- NA
 df$status[df$splitreads == 0] <- 'eccDNA-absent'
 
 
+# call common and never found genes based off previously identified cutoffs
 n_common_genes <- floor(length(df$splitreads[df$splitreads != 0])/10)
 
 common_genes_cutoff <- sort(df$splitreads, decreasing=TRUE)[n_common_genes]
@@ -47,12 +72,14 @@ df
 
 ```{r}
 
+# scaffold and scaffold lengths
 df_chromsizes <- data.frame(fread('guy11_genome_baoetal2017.chromsizes'))
 
 colnames(df_chromsizes) <- c('chrom', 'size')
 df_chromsizes$chrom <- as.numeric(substring(df_chromsizes$chrom, 11, 12))
 
 
+## count base pairs throughout the gneome according to which scaffold they are on, this is to plot the genome in a way that makes sense
 v <- numeric()
 
 for (scaffold in 1:56){
@@ -77,6 +104,7 @@ df$BASE_TOTAL <- apply(df, 1, f)
 
 df$status <- factor(df$status, levels=c('eccDNA-absent', 'Other genes', 'eccDNA-associated'))
 
+# so we can take the log of zeroes
 df$splitreads[df$splitreads == 0] <- 0.001
 
 df$splitreads <- log10(df$splitreads)
@@ -86,6 +114,7 @@ df$splitreads <- log10(df$splitreads)
 
 
 ```{r}
+# add known effector names
 known_effectors_file = 'known_effectors_fungap_names'
 known_effectors_table = read.table(known_effectors_file, header=FALSE, sep='\t')
 
@@ -96,6 +125,7 @@ grab_base <- function(x) {
   return(df$BASE_TOTAL[df$gene == x[2]])
 }
 
+# get info for known effector names
 known_effectors_table$V3 <- apply(known_effectors_table, 1, grab_splitreads)
 known_effectors_table$V4 <- apply(known_effectors_table, 1, grab_base)
 
@@ -104,13 +134,13 @@ colnames(known_effectors_table) <- c('known_effector_name', 'gene', 'splitreads'
 
 
 
-## exclude AVRPi9 bc of recent duplication
-#known_effectors_table <- known_effectors_table[known_effectors_table$known_effector_name != 'AvrPi9',]
 
 ```
 
 
 ```{r}
+
+# label candidate effectors
 
 effector_file <- 'guy11_effector_protein_names'
 
@@ -131,6 +161,7 @@ df$EFFECTOR <- apply(df, 1, effector)
 
 ```{r}
 
+## coverage plot for first few scaffolds
 start_subset <- 1
 
 end_subset <- 5
@@ -152,23 +183,23 @@ df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
 
 p1 <- ggplot() + 
   geom_point(data = df_subset[df_subset$EFFECTOR==FALSE,], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
-  geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) +
+  geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) + # write candidate effectors in green
   geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
                    yend=log10(common_genes_cutoff)),colour='#E6AB02')+
-    geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) +
+    geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) + # label known effectors
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
-                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 
   theme_classic() + xlab('Scaffold') +
   ylim(0, max(df$splitreads)) +
-  theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+
-  theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+
+  theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+# need to draw invisible labels so the plot looks pretty
+  theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+# need to draw invisible ticks so the plot looks pretty
    scale_y_continuous(breaks=-3:1, labels=c("0","0.01", "0.1", "1", "10"), limits = c(-3,1)) +
   ylab('Normalized encompassing \nsplit read count')+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6)) + guides(colour = guide_legend(override.aes = list(size=2)))+
   theme(axis.line.y = element_blank()) +
   annotate(geom = "segment", x = -Inf, xend = -Inf, y = -Inf, yend = Inf) +
-  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) +
+  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) +# chop up y axis which is not continuous because of zeroes
   scale_colour_manual(breaks = c("Other genes", "Predicted effectors"),
                       values = c("Other genes" = 'grey', "Predicted effectors" = "#006400"))
 
@@ -180,6 +211,7 @@ ggsave('test_effector.tiff', plot=p1, width=6.5, height=1.75, device = 'tiff', d
 
 ```{r}
 
+## coverage plot for first remaining scaffolds
 start_subset <- 6
 
 end_subset <- 56
@@ -210,7 +242,8 @@ for (scaffold in start_subset:end_subset){
   labs <- c(labs, scaffold)
 }
 
-#tick colors
+#tick colors to make it easier
+# especially since we arent labeling every label because of the extra, closely clusetered scaffolds
 
 tick_colors <- character()
 label_colors <- character()
@@ -238,50 +271,27 @@ df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
 
 p2 <- ggplot() + 
   geom_point(data = df_subset[df_subset$EFFECTOR==FALSE,], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
-  geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) +
+  geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) + # call effectors green
   geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])),
                 y=log10(common_genes_cutoff),
                 yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
-      geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) +
+      geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) + # label known effector names
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
-                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + 
+                           sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 
   theme_classic() + xlab('Scaffold') +
   ylim(0, max(df$splitreads)) +
-  theme(axis.text.x = element_text(colour=label_colors))+
-  theme(axis.ticks.x = element_line(colour=tick_colors))+
+  theme(axis.text.x = element_text(colour=label_colors))+# need to draw invisible labels so the plot looks pretty
+  theme(axis.ticks.x = element_line(colour=tick_colors))+# need to draw invisible ticks so the plot looks pretty
    scale_y_continuous(breaks=-3:1, labels=c("0","0.01", "0.1", "1", "10"), limits = c(-3,1)) +
   ylab('Normalized encompassing \nsplit read count')+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6))+ guides(colour = guide_legend(override.aes = list(size=2)))+
   theme(axis.line.y = element_blank()) +
   annotate(geom = "segment", x = -Inf, xend = -Inf, y = -Inf, yend = Inf) +
-  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) +
+  annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1) +# chop up y axis which is not continuous because of zeroes
   scale_colour_manual(breaks = c("Other genes", "Predicted effectors"),
                       values = c("Other genes" = 'grey', "Predicted effectors" = "#006400"))
 
-
-# p2 <- ggplot() +
-#   geom_point(data = df_subset[df_subset$status=="Other genes",], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
-#   geom_point(data = df_subset[df_subset$status=="eccDNA-absent",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-absent'),size=0.1) +
-#   geom_point(data = df_subset[df_subset$status=="eccDNA-associated",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-associated'),size=0.1) +
-#   geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])), 
-#                 y=log10(common_genes_cutoff), 
-#                 yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
-#   scale_x_continuous(labels=labs, breaks = ticks,
-#                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
-#                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +
-#   theme_classic() + xlab('Scaffold') +
-#   ylim(0, max(df$splitreads)) +
-#   theme(axis.text.x = element_text(colour=label_colors))+
-#   theme(axis.ticks.x = element_line(colour=tick_colors))+
-#   scale_y_continuous(breaks=-3:1, labels=c("0","0.01", "0.1", "1", "10"), limits = c(-3,1)) +
-#   ylab('Normalized encompassing \nsplit read count')+
-#   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6))+ guides(colour = guide_legend(override.aes = list(size=2)))+
-#   theme(axis.line.y = element_blank()) +
-#   annotate(geom = "segment", x = -Inf, xend = -Inf, y = -Inf, yend = Inf) +
-#   annotate(geom = "segment", x = -Inf, xend = -Inf, y =  -2.75, yend = -2.5, color = "white", size = 1)+
-#   scale_colour_manual(breaks = c("eccDNA-absent", "Other genes", "eccDNA-associated"),
-#                       values = c("eccDNA-absent" = '#03254c', "Other genes" = "grey", "eccDNA-associated" = "#E6AB02"))
 
 ggsave('test_effector2.tiff', plot=p2, width=6.5, height=1.75, device = 'tiff', dpi = 1000)
 
@@ -290,6 +300,8 @@ ggsave('test_effector2.tiff', plot=p2, width=6.5, height=1.75, device = 'tiff', 
 
 
 ```{r}
+
+## ggarrange so they look well aligned
 both <- ggarrange(p1,p2, ncol=1, nrow=2, common.legend = TRUE, legend='bottom')
 
 ggsave('test_effector3.tiff', plot=both, width=6.5, height=4, device = 'tiff', dpi = 1000)

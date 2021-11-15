@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "eccdna_forming_regions_md"
 output: html_document
 ---
@@ -8,6 +29,9 @@ output: html_document
 library(data.table)
 library(ggplot2)
 library(scales)
+
+## read in data frame of all junction split reads across all eccdna samples
+# this is just to count the total number of reads and the number of reads per rarefaction step
 
 df_splitreads <- data.frame(fread('all.ecc_caller_out.splitreads.bed'))
 
@@ -19,8 +43,10 @@ rm("df_splitreads")
 
 gc()
 
+# read in rarefaction table
 df <- data.frame(fread('regions_found_rarefaction'))
 
+# calculate means and sds
 df$means <- rowMeans(df[1:100])
 
 df$sd <- apply(subset(df, select = 1:100), 1, sd)
@@ -28,7 +54,7 @@ df$sd <- apply(subset(df, select = 1:100), 1, sd)
 
 df$steps <- seq(from = step_count, to = total_count, by = step_count)
 
-
+## scatter plot with connecting lines and standard deviations
 p <- ggplot(df, aes(steps, means)) + geom_point() + geom_line() + 
   geom_errorbar(aes(ymin=means-2*sd,ymax=means+2*sd))+
   scale_x_continuous(labels = comma) +
@@ -42,6 +68,9 @@ ggsave("eccdna_forming_regions_rarefaction.pdf", plot = p, width = 6, height = 4
 ```
 
 ```{r}
+## read in data frame of eccdnas across all eccdna samples
+# this is just to count the total number of reads and the number of reads per rarefaction step
+
 df_splitreads <- data.frame(fread('all.ecc_caller_out.details.nolowq.txt'))
 
 total_count <- nrow(df_splitreads)
@@ -52,7 +81,12 @@ rm("df_splitreads")
 
 gc()
 
+# read in rarefaction table
+
 df <- data.frame(fread('details_regions_found_rarefaction'))
+
+# calculate means and sds
+
 
 df$means <- rowMeans(df[1:100])
 
@@ -61,7 +95,7 @@ df$sd <- apply(subset(df, select = 1:100), 1, sd)
 
 df$steps <- seq(from = step_count, to = total_count, by = step_count)
 
-
+## scatter plot with connecting lines and standard deviations
 p <- ggplot(df, aes(steps, means)) + geom_point() + geom_line() +
   scale_x_continuous(labels = comma) +
   scale_y_continuous(labels = comma) +
@@ -74,6 +108,10 @@ ggsave("eccdna_forming_regions_rarefaction_details.pdf", plot = p, width = 6, he
 ```
 
 ```{r}
+
+## read in data frame of ltr eccdnas across all eccdna samples
+# this is just to count the total number of reads and the number of reads per rarefaction step
+
 file <- 'ltr'
 
 df_splitreads <- data.frame(fread(paste(file, '_eccdnas_all', sep='')))
@@ -87,8 +125,12 @@ rm("df_splitreads")
 gc()
 
 
+# read in rarefaction table
 
 df <- data.frame(fread(paste(file, '_regions_found_rarefaction', sep='')))
+
+# calculate means and sds
+
 
 df$means <- rowMeans(df[1:100])
 
@@ -97,7 +139,7 @@ df$sd <- apply(subset(df, select = 1:100), 1, sd)
 
 df$steps <- seq(from = step_count, to = total_count, by = step_count)
 
-
+## scatter plot with connecting lines but no standard deviations bc they are so small
 p <- ggplot(df, aes(steps, means)) + geom_point() + geom_line() +
   scale_x_continuous(labels = comma) +
   scale_y_continuous(labels = comma) +
@@ -110,6 +152,9 @@ ggsave(paste("eccdna_forming_regions_rarefaction_", file, '.pdf', sep=''), plot 
 ```
 
 ```{r}
+## read in data frame of large eccdnas across all eccdna samples
+# this is just to count the total number of reads and the number of reads per rarefaction step
+
 file <- 'large'
 
 df_splitreads <- data.frame(fread(paste(file, '_eccdnas_all', sep='')))
@@ -122,9 +167,11 @@ rm("df_splitreads")
 
 gc()
 
+# read in rarefaction table
 
 
 df <- data.frame(fread(paste(file, '_regions_found_rarefaction', sep='')))
+# calculate means and sds
 
 df$means <- rowMeans(df[1:100])
 
@@ -133,6 +180,7 @@ df$sd <- apply(subset(df, select = 1:100), 1, sd)
 
 df$steps <- seq(from = step_count, to = total_count, by = step_count)
 
+## scatter plot with connecting lines but no standard deviations bc they are so small
 
 p <- ggplot(df, aes(steps, means)) + geom_point() + geom_line() + 
   scale_x_continuous(labels = comma) +
@@ -146,6 +194,9 @@ ggsave(paste("eccdna_forming_regions_rarefaction_", file, '.pdf', sep=''), plot 
 ```
 
 ```{r}
+
+## read in data frame of microdnas across all eccdna samples
+# this is just to count the total number of reads and the number of reads per rarefaction step
 file <- 'micro'
 
 df_splitreads <- data.frame(fread(paste(file, '_dnas_all', sep='')))
@@ -158,9 +209,11 @@ rm("df_splitreads")
 
 gc()
 
+# read in rarefaction table
 
 
 df <- data.frame(fread(paste(file, '_regions_found_rarefaction', sep='')))
+# calculate means and sds
 
 df$means <- rowMeans(df[1:100])
 
@@ -169,6 +222,7 @@ df$sd <- apply(subset(df, select = 1:100), 1, sd)
 
 df$steps <- seq(from = step_count, to = total_count, by = step_count)
 
+## scatter plot with connecting lines but no standard deviations bc they are so small
 
 p <- ggplot(df, aes(steps, means)) + geom_point() + geom_line() + 
   scale_x_continuous(labels = comma) +

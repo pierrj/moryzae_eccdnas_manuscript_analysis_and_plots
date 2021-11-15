@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "gviz_practice"
 output: html_document
 ---
@@ -16,6 +37,8 @@ options(ucscChromosomeNames=FALSE)
 
 ```{r}
 
+## gff file of gene location
+
 df_gff <- data.frame(fread('AvrPita3.gff3'))
 
 colnames(df_gff) <- c('chromosome',
@@ -31,7 +54,7 @@ colnames(df_gff) <- c('chromosome',
 df_gff <- df_gff[df_gff$feature != 'gene' & df_gff$feature != 'mRNA' & df_gff$feature != 'CDS',]
 
 
-
+# called eccs in region
 df_eccs <- data.frame(fread('AvrPita3.G3_1B.eccs.bed'))
 
 colnames(df_eccs) <- c('chromosome',
@@ -45,16 +68,22 @@ colnames(df_eccs) <- c('chromosome',
                       'end')
 df_eccs <- df_eccs[,c(1,2,3)]
 
+# genome/chromosome track
 genome_track <- GenomeAxisTrack()
 
+## make tracks
+
+# define gene region
 grtrack <- GeneRegionTrack(df_gff, name = "i", gene='gene_11229', transcript='gene_11229.t1',
                             symbol = NULL, fontsize.group=30, 
                            col='#000000', shape = "arrow", fill='#006400', fontcolor.group="#000000",
                            fontcolor.title='#000000', rotation.title=0)
 
-ecc_track <- AnnotationTrack(df_eccs, name = 'ii', col = '#000000', fill='#000000', min.height=3, max.height=3,
+# define ecc track
+ecc_track <- AnnotationTrack(df_eccs, name = 'ii', col = '#000000', fill='#000000', min.height=3, max.height=3, # set size of track
                               fontcolor.title='#000000', rotation.title=0)
 
+#define total reads track
 total_reads <- AlignmentsTrack(
   'AvrPita3.G3_1B.totalreads.sorted.bam', isPaired = TRUE,
            chromosome = 'MQOP01000016.1', type = "coverage", name = 'iii',
@@ -62,46 +91,39 @@ total_reads <- AlignmentsTrack(
    fontcolor.title='#000000', rotation.title=0)
 
 
+# define junction split read tracks
 split_reads <- AlignmentsTrack(
   'junction_splitreads.AvrPita3.G3_1B.sorted.bam', isPaired = TRUE,
-           chromosome = 'MQOP01000016.1', type = "pileup", name = 'iv', lty.mates = 2, fill.reads='#F8766D', min.height=3.5, max.height=3.5,
+           chromosome = 'MQOP01000016.1', type = "pileup", name = 'iv', lty.mates = 2, fill.reads='#F8766D', min.height=3.5, # this sets size of arrows
   col.mates='#000000', col.reads='#000000',
    fontcolor.title='#000000', rotation.title=0)
 
+# define opposite facing read track
 discordant_reads <- AlignmentsTrack(
   'outwardfacing.AvrPita3.G3_1B.sorted.bam', isPaired = TRUE,
-           chromosome = 'MQOP01000016.1', type = "pileup", name = 'v', fill.reads='#00BFC4', min.height=3.5, max.height=3.5,
+           chromosome = 'MQOP01000016.1', type = "pileup", name = 'v', fill.reads='#00BFC4', min.height=3.5, max.height=3.5, # this sets size of arrows
             col.mates='#000000', col.reads='#000000',
    fontcolor.title='#000000', rotation.title=0)
 
+# define pacbio split reads track
 pacbio_splitreads <- AlignmentsTrack(
-  'AvrPita3.G3_1B_pacbio_splitreads.sorted.bam', isPaired = TRUE,
+  'AvrPita3.G3_1B_pacbio_splitreads.sorted.bam', isPaired = TRUE, # this is necessary for overlap to happen
            chromosome = 'MQOP01000016.1', type = "pileup", name = 'vi',
-  stacking = 'pack', min.height=10, col.reads='#000000', min.height=7, max.height=7,
+  stacking = 'pack', min.height=10, col.reads='#000000', min.height=7, max.height=7, # make them pretty big
    fontcolor.title='#000000', rotation.title=0)
 
 
-pdf("avrpita3_on_eccdnas.pdf", width=9, height=8)
+pdf("avrpita3_on_eccdnas.pdf", width=9, height=8) # need to make it double size and scale down otherwise the arrows arent properly drawn...
 plotTracks(list(genome_track,
                 grtrack,
                 ecc_track,
                 total_reads,
                 split_reads,
                 discordant_reads,
-                pacbio_splitreads), sizes=c(0.4,0.125,0.25,0.25,2.1,1.75,0.3),
-           from = 368546-2200, to = 370280+550, showTitle=TRUE, showAxis=FALSE)
+                pacbio_splitreads), sizes=c(0.4,0.125,0.25,0.25,2.1,1.75,0.3), # sizes take forever to figure out...
+           from = 368546-2200, to = 370280+550, showTitle=TRUE, showAxis=FALSE) # define region
 dev.off()
 
-
-# pdf("test.pdf", width=9, height=20)
-# plotTracks(discordant_reads,from = 368546-2000, to = 370280+550)
-# dev.off()
-# 
-# pdf("test2.pdf", width=9, height=20)
-# plotTracks(split_reads,from = 368546-2000, to = 370280+550)
-# dev.off()
-# 
-# displayPars(split_reads)
 
 ```
 

@@ -1,4 +1,25 @@
 ---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 title: "genes_found_rarefaction_md"
 output: html_document
 ---
@@ -8,21 +29,27 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
+## read in eccdna forming regions just to count them
+
 df_splitreads <- data.frame(fread('all.ecc_caller_out.regions.bed'))
 
 total_count <- nrow(df_splitreads)
 
 step_count <- total_count/10
 
+# takes up a huge amount of memory
 rm("df_splitreads")
 
 gc()
 
+
+# genes found rarified table, observed
 df_observed <- data.frame(fread('genes_found_rarefaction'))
 
+# genes found expected table, shuffled
 df_expected <- data.frame(fread('random_found_rarefaction'))
 
-
+# calculated means and sds
 df_observed$means <- rowMeans(df_observed[1:100])
 
 df_observed$sd <- apply(subset(df_observed, select = 1:100), 1, sd)
@@ -36,7 +63,11 @@ df_expected$sd <- apply(subset(df_expected, select = 1:100), 1, sd)
 
 df_expected$steps <- seq(from = step_count, to = total_count, by = step_count)
 
-gene_count = 12115
+## sds are really small actually so dont plot them
+
+gene_count = 12115 # for ylim
+
+# plot rarefaction curve for observed and expected (not sds though)
 
 p <- ggplot(df_observed, aes(steps, means)) + geom_point(aes(color="red")) + geom_line(aes(color="red")) + 
 #  geom_errorbar(aes(ymin=means-2*sd,ymax=means+2*sd), width=30000)+
@@ -55,27 +86,5 @@ p <- ggplot(df_observed, aes(steps, means)) + geom_point(aes(color="red")) + geo
 p
 
 ggsave("never_found_genes_rarefaction_analysis.pdf", plot = p, width = 3.25, height = 2)
-```
-
-```{r}
-
-p <- ggplot(df_observed, aes(steps, means)) + geom_point(aes(color="red")) + geom_line(aes(color="red")) + 
-#  geom_errorbar(aes(ymin=means-2*sd,ymax=means+2*sd), width=30000)+
-  geom_line(data=df_expected, aes(steps,means, color="blue")) +
-  geom_point(data=df_expected, aes(steps,means, color="blue") ) +
-#  geom_errorbar(data=df_expected, aes(ymin=means-2*sd, ymax=means+2*sd), width=30000) +
-  scale_x_continuous(labels = comma, expand = expand_scale()) +
-  scale_y_continuous(labels = comma, expand = expand_scale()) +
-  labs(x="Sampled eccDNA forming regions",
-       y="Genes found fully encompassed \nby eccDNA forming regions") + coord_cartesian(ylim = c(0, 12115)) +
-  scale_color_identity(name = "",
-                       breaks = c("red", "blue"),
-                       labels = c("Observed", "Shuffled"),
-                       guide = "legend")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position='bottom')
-
-p
-
-ggsave("never_found_genes_rarefaction_analysis_bottom_legend.pdf", plot = p, width = 3.25, height = 3)
-
 ```
 
