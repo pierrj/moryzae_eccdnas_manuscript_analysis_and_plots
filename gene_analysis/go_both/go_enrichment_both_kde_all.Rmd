@@ -1,0 +1,346 @@
+---
+title: "go_enrichment_both_kde_all"
+output: html_document
+---
+
+```{r}
+library(topGO)
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+
+# this function takes a processed pannzer output and a list of genes (to be randomly selected) and returns the number of those genes associated with each go id
+get_go_observed <- function(x, ont) {
+  geneList <- factor(as.integer(geneNames %in% x))
+  names(geneList) <- geneNames
+  GOdata <- suppressMessages(new("topGOdata", ontology = ont, allGenes = geneList, annot = annFUN.gene2GO, gene2GO = geneID2GO))
+  return(termStat(GOdata)$Significant)
+}
+
+
+## make a table and perform chi square test, report -log 10 pvalue
+chisquare_test <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  observed_vector <- c(o_s_a, o_s_n, o_n_a, o_n_n)
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  expected_vector <- c(e_s_a, e_s_n, e_n_a, e_n_n)
+  # calculate chi statistic manually
+  chi <- sum((observed_vector - expected_vector)^2/expected_vector)
+  return(-log10(pchisq(chi, 1, lower.tail = FALSE)))
+}
+
+# calculate ratio of genes observed in the category of interest over genes expected in the category and return that ratio
+observed_expected_ratio <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  o_e_ratio <- (o_s_a/(o_s_a+o_n_a))/(e_s_a/(e_s_a+e_n_a))
+  return(o_e_ratio)
+}
+
+localGetTermsDefinition<-getFromNamespace(".getTermsDefinition", "topGO")
+
+```
+
+
+
+```{r}
+
+## read in pannzer output with go ids
+geneID2GO <-  readMappings("G3.filtered.GO.awk.txt")
+
+geneNames <- names(geneID2GO)
+
+myInterestingGenes <- as.character(read.csv("G3.common.genes",header=F, stringsAsFactors=FALSE, colClasses="character")$V1)
+geneList <- factor(as.integer(geneNames %in% myInterestingGenes))
+names(geneList) <- geneNames
+
+```
+
+
+```{r}
+
+ontologies = c("CC", "BP", "MF")
+
+for (ontology in ontologies) {
+
+  # get GO data for observed gene list, eccdna-associated genes in this case
+  
+  GOdata <- suppressMessages(new("topGOdata", ontology = ontology, allGenes = geneList, annot = annFUN.gene2GO, 
+                                 gene2GO = geneID2GO))
+  
+  observed <- termStat(GOdata)$Significant
+  
+  # these are all of the genes with go annotations
+  annotated <- termStat(GOdata)$Annotated
+  
+  # grab the full term descriptions for each go id
+  terms <- localGetTermsDefinition(rownames(termStat(GOdata)), ontology(GOdata), numChar=1000)
+  
+  # simple gene lengths 
+  df_lengths <- data.frame(fread('guy11_fungap_out_12_28_20.gene_lengths'))
+  
+  colnames(df_lengths) <- c('gene', 'length')
+  
+  # lengths of observed gene list
+  
+  df_lengths_siggenes <- df_lengths[df_lengths$gene %in% sigGenes(GOdata), ]
+  
+  # make KDE function of observed genes
+  d <- density(df_lengths_siggenes$length)
+  
+  density_function <- approxfun(d)
+  
+  feasible_genes <- genes(GOdata)
+  
+  feasible_genes_lengths <- df_lengths$length[df_lengths$gene %in% feasible_genes ]
+  
+  probabilities <- density_function(feasible_genes_lengths)
+  
+  ## replace NAs with zeroes, these genes are larger than what would ever be expected in common genes
+  
+  probabilities[is.na(probabilities)] <- 0
+  
+  ## sample genes at random, weighted by their length based off the KDE function
+  
+  sampled_genes <- data.frame(replicate(100, sample(feasible_genes, size = nrow(df_lengths_siggenes), replace = FALSE, 
+                                                    prob = probabilities)))
+  
+  # call go terms for sampled genes to get expected number of genes for each go id
+  x <- lapply(sampled_genes, get_go_observed, ont=ontology)
+  
+  df_x <- data.frame(x)
+  
+  expected <- rowMeans(df_x)
+  
+  # make data frame of observed vs expected
+  
+  df_go_permuted <- data.frame(annotated, observed, expected, terms)
+  
+  rownames(df_go_permuted) <- rownames(termStat(GOdata))
+  
+  # get count for observed vs expected
+  num_genes <- numGenes(GOdata)
+  num_observed_sig_genes <- numSigGenes(GOdata)
+  num_obseved_notsig_genes <- num_genes-num_observed_sig_genes
+  
+  num_expected_sig_genes <- num_observed_sig_genes
+  num_expected_notsig_genes <- num_genes - num_expected_sig_genes
+  
+  # perform chi square test for each go term and calculate the observed/expected ratio
+  df_go_permuted$chi <- apply(df_go_permuted, 1, chisquare_test)
+  
+  df_go_permuted$observed_expected_ratio <- apply(df_go_permuted,1,observed_expected_ratio)
+  
+  # omit NAs from chisquare test
+  df_ontology_name <- paste('filtered_df_', ontology, sep = "")
+  subset <- na.omit(df_go_permuted[df_go_permuted$annotated > 5 & df_go_permuted$chi > -log10(0.05),])
+  # write csv with all results
+  write.csv(subset,paste("filtered_df_all_hits_", ontology, ".csv", sep=""))
+  # sort and subset to top20
+  assign(df_ontology_name, head(subset[order(-subset$chi),], 20))
+}
+
+```
+
+```{r}
+
+filtered_df_cc_common <- filtered_df_CC
+
+p_cc_common <- ggplot(filtered_df_cc_common, aes(x = observed_expected_ratio, y = terms)) +
+  geom_point(aes(color=chi, size=annotated)) + theme_classic() +
+  scale_colour_gradient(low = "blue", high = "red") +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) + # rectangle shows the mark for observed/expected is 1
+  xlab("Observed count over expected count") + ylab("Cellular componet") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+
+```
+
+
+
+```{r}
+
+# this function takes a processed pannzer output and a list of genes (to be randomly selected) and returns the number of those genes associated with each go id
+get_go_observed <- function(x, ont) {
+  geneList <- factor(as.integer(geneNames %in% x))
+  names(geneList) <- geneNames
+  GOdata <- suppressMessages(new("topGOdata", ontology = ont, allGenes = geneList, annot = annFUN.gene2GO, gene2GO = geneID2GO))
+  return(termStat(GOdata)$Significant)
+}
+
+## make a table and perform chi square test, report -log 10 pvalue
+chisquare_test <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  observed_vector <- c(o_s_a, o_s_n, o_n_a, o_n_n)
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  expected_vector <- c(e_s_a, e_s_n, e_n_a, e_n_n)
+  chi <- sum((observed_vector - expected_vector)^2/expected_vector)
+  return(-log10(pchisq(chi, 1, lower.tail = FALSE)))
+}
+
+# calculate ratio of genes observed in the category of interest over genes expected in the category and return that ratio
+observed_expected_ratio <- function(x){
+  o_s_a <- as.numeric(x[[2]])
+  o_s_n <- num_observed_sig_genes - o_s_a
+  o_n_a <- as.numeric(x[[1]]) - o_s_a
+  o_n_n <- num_obseved_notsig_genes - o_n_a
+  e_s_a <- as.numeric(x[[3]])
+  e_s_n <- num_expected_sig_genes - e_s_a
+  e_n_a <- as.numeric(x[[1]]) - e_s_a
+  e_n_n <- num_expected_notsig_genes - e_n_a
+  o_e_ratio <- (o_s_a/(o_s_a+o_n_a))/(e_s_a/(e_s_a+e_n_a))
+  return(o_e_ratio)
+}
+
+localGetTermsDefinition<-getFromNamespace(".getTermsDefinition", "topGO")
+
+```
+
+
+
+```{r}
+
+## read in pannzer output with go ids
+geneID2GO <-  readMappings("G3.filtered.GO.awk.txt")
+
+geneNames <- names(geneID2GO)
+
+myInterestingGenes <- as.character(read.csv("G3.neverfound.genes",header=F, stringsAsFactors=FALSE, colClasses="character")$V1)
+geneList <- factor(as.integer(geneNames %in% myInterestingGenes))
+names(geneList) <- geneNames
+
+```
+
+
+```{r}
+
+ontologies = c("CC", "BP", "MF")
+
+for (ontology in ontologies) {
+  
+  # get GO data for observed gene list, eccdna-associated genes in this case
+
+  GOdata <- suppressMessages(new("topGOdata", ontology = ontology, allGenes = geneList, annot = annFUN.gene2GO, 
+                                 gene2GO = geneID2GO))
+  
+  observed <- termStat(GOdata)$Significant
+  
+  # these are all of the genes with go annotations
+  annotated <- termStat(GOdata)$Annotated
+  
+  # grab the full term descriptions for each go id
+  terms <- localGetTermsDefinition(rownames(termStat(GOdata)), ontology(GOdata), numChar=1000)
+  
+  # simple gene lengths 
+  df_lengths <- data.frame(fread('guy11_fungap_out_12_28_20.gene_lengths'))
+  
+  colnames(df_lengths) <- c('gene', 'length')
+  
+  # lengths of observed gene list
+  
+  df_lengths_siggenes <- df_lengths[df_lengths$gene %in% sigGenes(GOdata), ]
+  
+  # make KDE function of observed genes
+  d <- density(df_lengths_siggenes$length)
+  
+  density_function <- approxfun(d)
+  
+  feasible_genes <- genes(GOdata)
+  
+  feasible_genes_lengths <- df_lengths$length[df_lengths$gene %in% feasible_genes ]
+  
+  ## replace NAs with zeroes, these genes are larger than what would ever be expected in common genes
+  
+  probabilities <- density_function(feasible_genes_lengths)
+  
+  ## sample genes at random, weighted by their length based off the KDE function
+  
+  sampled_genes <- data.frame(replicate(100, sample(feasible_genes, size = nrow(df_lengths_siggenes), replace = FALSE, 
+                                                    prob = probabilities)))
+  
+  # call go terms for sampled genes to get expected number of genes for each go id
+  x <- lapply(sampled_genes, get_go_observed, ont=ontology)
+  
+  df_x <- data.frame(x)
+  
+  expected <- rowMeans(df_x)
+  
+  # make data frame of observed vs expected
+  
+  df_go_permuted <- data.frame(annotated, observed, expected, terms)
+  
+  rownames(df_go_permuted) <- rownames(termStat(GOdata))
+  
+  
+  # get count for observed vs expected
+  num_genes <- numGenes(GOdata)
+  num_observed_sig_genes <- numSigGenes(GOdata)
+  num_obseved_notsig_genes <- num_genes-num_observed_sig_genes
+  
+  num_expected_sig_genes <- num_observed_sig_genes
+  num_expected_notsig_genes <- num_genes - num_expected_sig_genes
+  
+  # perform chi square test for each go term and calculate the observed/expected ratio
+  df_go_permuted$chi <- apply(df_go_permuted, 1, chisquare_test)
+  
+  df_go_permuted$observed_expected_ratio <- apply(df_go_permuted,1,observed_expected_ratio)
+  
+  # omit NAs from chisquare test
+  df_ontology_name <- paste('filtered_df_', ontology, sep = "")
+  subset <- na.omit(df_go_permuted[df_go_permuted$annotated > 5 & df_go_permuted$chi > -log10(0.05),])
+  # write csv with all results
+  write.csv(subset,paste("filtered_df_all_hits_", ontology, ".csv", sep=""))
+  # sort and subset to top20
+  assign(df_ontology_name, head(subset[order(-subset$chi),], 20))
+}
+
+```
+
+```{r}
+
+filtered_df_cc_never <- filtered_df_CC
+
+p_cc_never <- ggplot(filtered_df_cc_never, aes(x = observed_expected_ratio, y = terms)) +
+  geom_point(aes(color=chi, size=annotated)) + theme_classic() +
+  scale_colour_gradient(low = "blue", high = "red") +
+  geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
+  xlab("Observed count over expected count") + ylab("Cellular componet") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+```
+
+```{r}
+library(cowplot)
+
+## align all plots so they can align nicely in adobe illustrator
+
+
+both <- align_plots(p_cc_common, p_cc_never, align="hv", axis="tblr")
+p1x <- ggdraw(both[[1]])
+p2x <- ggdraw(both[[2]])
+
+
+ggsave("test_aligned_1.pdf", plot = p1x, width = 6.5, height = 3.5)
+ggsave("test_aligned_2.pdf", plot = p2x, width = 6.5, height = 3.5)
+
+
+```
+

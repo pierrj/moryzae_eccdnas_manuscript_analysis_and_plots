@@ -16,7 +16,7 @@ library(ggpubr)
 df <- data.frame(fread('G3.normalized_binned.filtered.renamed.withbinnames.table'))
 
 
-tes_vector <- c('GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'copia1')
+tes_vector <- c('GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'Copia1')
 
 df_te_snps <- data.frame()
 
@@ -66,7 +66,7 @@ f <- function(g) {
 
 df$BASE_TOTAL <- apply(df, 1, f)
 
-df$TE <- factor(df$TE, levels=c('None1', 'None2', 'GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'copia1'))
+df$TE <- factor(df$TE, levels=c('None1', 'None2', 'GYMAG1', 'GYMAG2', 'MAGGY', 'MGRL3', 'PYRET', 'Copia1'))
 
 df <- df[df$COUNT != 0,]
 

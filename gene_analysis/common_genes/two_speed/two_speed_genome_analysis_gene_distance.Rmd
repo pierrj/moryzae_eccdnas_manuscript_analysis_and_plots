@@ -198,7 +198,7 @@ p2 <- ggplot(df[df$effector == TRUE,], aes(x=distance_five, y=distance_three)) +
   annotation_logticks() +# special logtick tick marks
   scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +# logticks
   scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +
-  labs(fill = "Putative effector \ndensity")+
+  labs(fill = "Predicted effector \ndensity")+
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
 
 p2

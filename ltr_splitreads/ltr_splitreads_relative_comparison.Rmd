@@ -30,11 +30,7 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
-# read in table and rename columns
 
-df <- data.frame(fread('cov_feature_table'))
-
-colnames(df) <- c("feature","ltr_srs", "ltr_ltr_srs", "ltr_internal_srs", "reads", "junction")
 
 
 te_list <- list()
@@ -48,58 +44,91 @@ te_list[[4]] <- c('GYMAG2', "#2a9df4")
 te_list[[5]] <- c('MGRL3', "#E7298A")
 te_list[[6]] <- c('PYRET', "#66A61E")
 
+samples <- c('G3_1A', 'G3_1B', 'G3_1C', 'G3_2A', 'G3_2B', 'G3_2C', 'G3_3A', 'G3_3B') 
 
 ```
 
 
 ```{r}
 
-normalized_ltr_ltr_srs_list <- list()
+# define empty dataframes to add data to
 
-normalized_ltr_internal_srs_list <- list()
+columns= c("element","sample","normalized_ltr_ltr_srs") 
+df_ltr_ltr_srs_final = data.frame(matrix(nrow = 0, ncol = length(columns))) 
+colnames(df_ltr_ltr_srs_final) = columns
+
+columns= c("element","sample","normalized_ltr_internal_srs") 
+df_ltr_internal_srs_final = data.frame(matrix(nrow = 0, ncol = length(columns))) 
+colnames(df_ltr_internal_srs_final) = columns
 
 
-# normalize different types of srs by number of reads
-for (te in te_list) {
-  element <- te[[1]]
-  
-  df_subset <- df[grepl(element, df$feature),]
+for (sample in samples) {
 
-  sum_ltr_ltr_srs <- sum(df_subset$ltr_ltr_srs)
+  # read in table and rename columns
   
-  sum_ltr_internal_srs <- sum(df_subset$ltr_internal_srs)
+  df <- data.frame(fread(paste(sample,'.cov_perfeature_table',sep='')))
   
-  sum_reads <- sum(df_subset$reads)
+  colnames(df) <- c("feature","ltr_srs", "ltr_ltr_srs", "ltr_internal_srs", "reads", "junction")
+
+  normalized_ltr_ltr_srs_list <- list()
   
-  te_vector <- c(element, sum_reads, sum_ltr_ltr_srs, sum_ltr_internal_srs)
+  normalized_ltr_internal_srs_list <- list()
   
-  normalized_ltr_ltr_srs_list[[element]] <- c(element, sum_ltr_ltr_srs/sum_reads*1000000)
   
-  normalized_ltr_internal_srs_list[[element]] <- c(element, sum_ltr_internal_srs/sum_reads*1000000)
+  # get sums per TE
+  for (te in te_list) {
+    element <- te[[1]]
+    
+    df_subset <- df[grepl(element, df$feature),]
+  
+    sum_ltr_ltr_srs <- sum(df_subset$ltr_ltr_srs)
+    
+    sum_ltr_internal_srs <- sum(df_subset$ltr_internal_srs)
+    
+    # number of reads mapping to that element
+    sum_reads <- sum(df_subset$reads)
+    
+    normalized_ltr_ltr_srs_list[[element]] <- c(element, sum_ltr_ltr_srs/sum_reads*1000000)
+    
+    normalized_ltr_internal_srs_list[[element]] <- c(element, sum_ltr_internal_srs/sum_reads*1000000)
+    
+  }
+  
+  df_normalized_ltr_ltr_srs <- data.frame(t(data.frame(normalized_ltr_ltr_srs_list)))
+  
+  colnames(df_normalized_ltr_ltr_srs) <- c('element','normalized_ltr_ltr_srs')
+  
+  df_normalized_ltr_ltr_srs$normalized_ltr_ltr_srs <- as.numeric(as.character(df_normalized_ltr_ltr_srs$normalized_ltr_ltr_srs))
+  
+  df_normalized_ltr_internal_srs <- data.frame(t(data.frame(normalized_ltr_internal_srs_list)))
+  
+  colnames(df_normalized_ltr_internal_srs) <- c('element','normalized_ltr_internal_srs')
+  
+  # finicky numeric issues
+  df_normalized_ltr_internal_srs$normalized_ltr_internal_srs <- as.numeric(as.character(df_normalized_ltr_internal_srs$normalized_ltr_internal_srs))
+  
+  df_normalized_ltr_ltr_srs$element <- factor(df_normalized_ltr_ltr_srs$element, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
+  
+  df_normalized_ltr_ltr_srs$sample <- rep(sample, 6)
+  
+  rownames(df_normalized_ltr_ltr_srs) <- NULL
+  
+  # add to total dataframe
+  df_ltr_ltr_srs_final <- rbind(df_ltr_ltr_srs_final, df_normalized_ltr_ltr_srs)
+  
+  df_normalized_ltr_internal_srs$element <- factor(df_normalized_ltr_internal_srs$element, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
+
+  df_normalized_ltr_internal_srs$sample <- rep(sample, 6)
+  
+  
+  rownames(df_normalized_ltr_internal_srs) <- NULL
+  
+  # add to total dataframe
+  df_ltr_internal_srs_final <- rbind(df_ltr_internal_srs_final, df_normalized_ltr_internal_srs)
   
 }
 
-df_normalized_ltr_ltr_srs <- data.frame(t(data.frame(normalized_ltr_ltr_srs_list)))
-
-colnames(df_normalized_ltr_ltr_srs) <- c('element','normalized_ltr_ltr_srs')
-
-df_normalized_ltr_ltr_srs$normalized_ltr_ltr_srs <- as.numeric(as.character(df_normalized_ltr_ltr_srs$normalized_ltr_ltr_srs))
-
-df_normalized_ltr_internal_srs <- data.frame(t(data.frame(normalized_ltr_internal_srs_list)))
-
-colnames(df_normalized_ltr_internal_srs) <- c('element','normalized_ltr_internal_srs')
-
-# finicky numeric issues
-df_normalized_ltr_internal_srs$normalized_ltr_internal_srs <- as.numeric(as.character(df_normalized_ltr_internal_srs$normalized_ltr_internal_srs))
-
-df_normalized_ltr_ltr_srs$element <- factor(df_normalized_ltr_ltr_srs$element, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
-
-df_normalized_ltr_internal_srs$element <- factor(df_normalized_ltr_internal_srs$element, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))
-
-
-
 ```
-
 
 ```{r}
 
@@ -110,16 +139,19 @@ colors <- c('copia1' = "#E6AB02",
 'MGRL3' = "#E7298A",
 'PYRET' = "#66A61E")
 
-# barplot for ltr_ltr splitreads
+# boxplot for ltr_ltr splitreads
 
-p <- ggplot(data=df_normalized_ltr_ltr_srs, aes(x=element, y=normalized_ltr_ltr_srs, fill=element))+
-  geom_bar(stat='identity', position=position_dodge()) + 
+p <- ggplot(data=df_ltr_ltr_srs_final, aes(x=element, y=normalized_ltr_ltr_srs, color=element))+
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(position=position_jitter(0.2)) +
   theme_classic()+
   ylab('LTR-LTR splitreads \nper million mapped reads')+
   xlab('')+
-  scale_fill_manual(values = colors)+
+  scale_color_manual(values = colors)+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+
+p
 
 
 ggsave('ltr_ltr_splitreads_normalized_barplot.pdf', plot = p, width = (6.5/2), height = 2)
@@ -131,14 +163,17 @@ ggsave('ltr_ltr_splitreads_normalized_barplot.pdf', plot = p, width = (6.5/2), h
 
 # barplot for ltr_internal splitreads
 
-p <- ggplot(data=df_normalized_ltr_internal_srs, aes(x=element, y=normalized_ltr_internal_srs, fill=element))+
-  geom_bar(stat='identity', position=position_dodge()) + 
+p <- ggplot(data=df_ltr_internal_srs_final, aes(x=element, y=normalized_ltr_internal_srs, color=element))+
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(position=position_jitter(0.2)) +
   theme_classic()+
-  ylab('LTR-Internal splitreads \nper million reads')+
+  ylab('LTR-LTR splitreads \nper million mapped reads')+
   xlab('')+
-  scale_fill_manual(values = colors)+
+  scale_color_manual(values = colors)+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+
+p
 
 
 ggsave('ltr_internal_splitreads_normalized_barplot.pdf', plot = p, width = (6.5/2), height = 2)

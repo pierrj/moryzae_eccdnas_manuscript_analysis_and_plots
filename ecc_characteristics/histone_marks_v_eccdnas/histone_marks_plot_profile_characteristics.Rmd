@@ -30,6 +30,24 @@ library(ggplot2)
 ```
 
 ```{r}
+
+# define consistent colors
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+
+colors <- gg_color_hue(10)
+
+names(colors) <- c("Genome baseline", "All genes", "LTR TEs", "Methylated genes", "Nonmethylated genes",
+                                            "Acetylated genes", "Nonacetylated genes",
+                                            "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs")
+```
+
+
+
+```{r}
 # read in tab output from plot profile
 
 df_read <- t(data.frame(fread("gc.tab")))
@@ -49,10 +67,14 @@ df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
 
+
+subset_colors <- colors[names(colors) %in% df$label]
+
 # plot gc content across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('GC content')  +
+  scale_colour_manual(values=subset_colors) +
   guides(color=guide_legend(nrow=3,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
   theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
 
@@ -83,10 +105,13 @@ df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
 
+subset_colors <- colors[names(colors) %in% df$label]
+
 # ratio of H3K27me across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27me3')  +
+    scale_colour_manual(values=subset_colors) +
   guides(color=guide_legend(nrow=4,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
   theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
 
@@ -115,10 +140,13 @@ df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
 
+subset_colors <- colors[names(colors) %in% df$label]
+
 # ratio of H3K36me across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K36me3')  +
+    scale_colour_manual(values=subset_colors) +
   guides(color=guide_legend(nrow=3,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
   theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
 
@@ -147,10 +175,13 @@ df$label <- factor(df$label, levels = c("Genome baseline", "All genes", "LTR TEs
                                             "Acetylated genes", "Nonacetylated genes",
                                             "Large eccDNAs", "LTR-eccDNAs", "MicroDNAs"))
 
+subset_colors <- colors[names(colors) %in% df$label]
+
 # ratio of H3K27ac across tracks
 
 p <- ggplot(df, aes(x=bin, y=val, group=label)) + geom_line(aes(color=label), lwd=0.5) + theme_classic() +
   scale_x_continuous(labels=c('-0.3kb', 'Start', 'End', '0.3kb'), breaks=c(1,30,130,160)) + xlab('')+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) + ylab('H3K27ac')  +
+    scale_colour_manual(values=subset_colors) +
   guides(color=guide_legend(nrow=4,byrow=TRUE,keywidth=0.1, keyheight=0.1, default.unit='inch')) +
   theme(legend.position = 'bottom', legend.box.margin =margin(-15,-10,0,-10))
 

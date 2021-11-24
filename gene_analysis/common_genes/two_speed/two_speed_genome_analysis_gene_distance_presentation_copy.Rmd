@@ -20,10 +20,9 @@
 #LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
-title: "two_speed_genome_analysis_repeat_distance"
+title: "two_speed_genome_analysis_gene_distance"
 output: html_document
 ---
-
 
 ```{r}
 library(ggplot2)
@@ -31,10 +30,11 @@ library(scales)
 library(viridis)
 
 # list of elements to judge the distance of, in this case genes
+
 subset_file = "guy11_fungap_out_12_28_20.justgenes.renamed.bed"
 
-# list of elements to judge the distance to, in this case repeats
-reference_file = "moryzae_all_tes_wrepeats.bed"
+# list of elements to judge the distance to, in this case genes again
+reference_file = "guy11_fungap_out_12_28_20.justgenes.renamed.bed"
 
 ## eccdna associated and eccdna absent genes
 common_file = "G3.common.genes"
@@ -43,6 +43,7 @@ neverfound_file = "G3.neverfound.genes"
 
 # name of genes that are predicted effectors
 effector_file = "guy11_effector_protein_names"
+
 
 # read in files
 subset <- read.table(subset_file,header=FALSE,sep='\t')
@@ -60,14 +61,13 @@ effector_genes <- read.table(effector_file, header=FALSE, sep='\t')
 ```
 
 ```{r}
-
 ## get closest thing upstream
 f_5 = function(x, output) {
   chrom = x[[1]]
   start = as.numeric(x[[2]])
   end = as.numeric(x[[3]])
   id = x[[4]]
-  return(abs(max(reference$V3[reference$V1 == chrom & reference$V4 != id & reference$V3 <= start] - start))) # max bc number is negative
+  return(abs(max(reference$V3[reference$V1 == chrom & reference$V4 != id & reference$V3 <= start] - start)))# max bc number is negative
 }
 
 # get closest thing downstream
@@ -76,7 +76,7 @@ f_3 = function(x, output) {
   start = as.numeric(x[[2]])
   end = as.numeric(x[[3]])
   id = x[[4]]
-  return(min(reference$V2[reference$V1 == chrom & reference$V4 != id & reference$V2 >= end] - end)) # min bc number is positive
+  return(min(reference$V2[reference$V1 == chrom & reference$V4 != id & reference$V2 >= end] - end))# min bc number is positive
 }
 
 # get the closer of the two
@@ -84,12 +84,11 @@ closest_thing = function(x, output) {
   closest_5 = x[[5]]
   closest_3 = x[[6]]
   vector <- c(as.numeric(closest_5), as.numeric(closest_3))
-  return(min(vector[is.finite(vector)])) # just find the smallest one
+  return(min(vector[is.finite(vector)]))# just find the smallest one
 }
 ```
 
 ```{r}
-
 ## use functions defined above
 subset$V5 <- apply(subset, 1, f_5)
 
@@ -103,6 +102,7 @@ subset_common <- subset[subset$V4 %in% common_genes$V1,]
 subset_never <- subset[subset$V4 %in% neverfound_genes$V1,]
 
 subset_sometimes <- subset[! subset$V4 %in% neverfound_genes$V1 & ! subset$V4 %in% common_genes$V1 ,]
+
 
 # label genes by eccdna gene status
 subset_common$V8 <- rep("Commonly on eccDNAs", nrow(subset_common))
@@ -161,26 +161,26 @@ known_effectors_table$V4 <- apply(known_effectors_table, 1, grab_3_distance)
 
 colnames(known_effectors_table) <- c('known_effector_name', 'gene', 'distance_five', 'distance_three')
 
+## exclude AVRPi9 bc of recent duplication
+known_effectors_table <- known_effectors_table[known_effectors_table$known_effector_name != 'AvrPi9',]
 
 ```
 
 ```{r}
 # plot 2d density plot for all genes
-
 p1 <- ggplot(df, aes(x=distance_five, y=distance_three)) +  
-  stat_density_2d(aes(fill = ..level..), geom = "polygon") + # 2d density
-  scale_fill_distiller(palette = "RdYlBu", direction = -1) + # this direction is better
-  geom_segment(aes(x=x_int,xend=x_int,y=-Inf,yend=y_int), size =0.5, linetype='dashed') + ## draw median segments
-  geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
-  xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
-  annotation_logticks() + # special logtick tick marks
-  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) + # logticks
-  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
+  stat_density_2d(aes(fill = ..level..), geom = "polygon") +# 2d density
+  scale_fill_distiller(palette = "RdYlBu", direction = -1) +# this direction is better
+  geom_segment(aes(x=x_int,xend=x_int,y=Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments
+  geom_segment(aes(x=Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
+  xlab("5' Distance to nearest gene (kbp)") + ylab("3' Distance to nearest gene (kbp)") +
+  annotation_logticks() +# special logtick tick marks
+  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +# logticks
+  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +
   labs(fill = "Gene density")+
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
 
 p1
-
 
 ```
 
@@ -188,18 +188,17 @@ p1
 
 ```{r}
 # plot 2d density plot for effectors, with known effectors labeled
-
 p2 <- ggplot(df[df$effector == TRUE,], aes(x=distance_five, y=distance_three)) +  
   stat_density_2d(aes(fill = ..level..), geom = "polygon") +
   scale_fill_distiller(palette = "Greens", direction = 1) +
-  geom_segment(aes(x=x_int,xend=x_int,y=-Inf,yend=y_int), size =0.5, linetype='dashed') + ## draw median segments for all genes
-  geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
-  geom_text(data = known_effectors_table, aes(x=distance_five, y=distance_three, label=known_effector_name)) + # label known effectors
-  xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
+  geom_segment(aes(x=x_int,xend=x_int,y=Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments for all genes
+  geom_segment(aes(x=Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
+  geom_text(data = known_effectors_table, aes(x=distance_five, y=distance_three, label=known_effector_name), size =3) +# label known effectors
+  xlab("5' Distance to nearest gene (kbp)") + ylab("3' Distance to nearest gene (kbp)") +
   annotation_logticks() +# special logtick tick marks
-  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
-  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
-  labs(fill = "Predicted effector \ndensity")+
+  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +# logticks
+  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +
+  labs(fill = "Putative effector \ndensity")+
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
 
 p2
@@ -210,19 +209,17 @@ p2
 
 ```{r}
 
-# plot 2d density plot for eccdna-absent
-
-
+# plot 2d density plot for eccdna-associated
 p3 <- ggplot(df[df$common_gene == "Never on eccDNAs",],
        aes(x=distance_five, y=distance_three)) +  
   stat_density_2d(aes(fill = ..level..), geom = "polygon") +
   scale_fill_distiller(palette = "Reds", direction = 1) +
-  geom_segment(aes(x=x_int,xend=x_int,y=-Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments for all genes
-  geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
-  xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
+  geom_segment(aes(x=x_int,xend=x_int,y=Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments for all genes
+  geom_segment(aes(x=Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
+  xlab("5' Distance to nearest gene (kbp)") + ylab("3' Distance to nearest gene (kbp)") +
   annotation_logticks() +# special logtick tick marks
-  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
-  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
+  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +# logticks
+  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +
   labs(fill = "eccDNA-absent \ngene density")+
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
 
@@ -233,17 +230,16 @@ p3
 
 ```{r}
 # plot 2d density plot for eccdna-associated
-
 p4 <- ggplot(df[df$common_gene == "Commonly on eccDNAs",],
        aes(x=distance_five, y=distance_three)) +  
   stat_density_2d(aes(fill = ..level..), geom = "polygon") +
-  scale_fill_distiller(palette = "Blues", direction = 1) +
-  geom_segment(aes(x=x_int,xend=x_int,y=-Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments for all genes
-  geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
-  xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
-  annotation_logticks() +# special logtick tick marks
-  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
-  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
+  scale_fill_distiller(palette = "Oranges", direction = 1) +
+  geom_segment(aes(x=x_int,xend=x_int,y=Inf,yend=y_int), size =0.5, linetype='dashed') +## draw median segments for all genes
+  geom_segment(aes(x=Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
+  xlab("5' Distance to nearest gene (kbp)") + ylab("3' Distance to nearest gene (kbp)") +
+  annotation_logticks() +# special logtick tick mark
+  scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +# logticks
+  scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(2,4.5)) +
   labs(fill = "eccDNA-associated \ngene density")+
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), legend.position = 'bottom', legend.text=element_text(size=6))
 
@@ -251,21 +247,11 @@ p4
 
 ```
 
-
-```{r}
-# print medians for all categories
-
-median(df$min_distance[df$common_gene == "Never on eccDNAs"])
-median(df$min_distance[df$common_gene == "Sometimes on eccDNAs"])
-median(df$min_distance[df$common_gene == "Commonly on eccDNAs" ])
-median(df$min_distance[df$common_gene != "Commonly on eccDNAs"])
-median(df$min_distance[df$common_gene != "Never on eccDNAs"])
-```
-
 ```{r}
 library(cowplot)
 
 ## align all plots so they can align nicely in adobe illustrator
+
 
 all4 <- align_plots(p1, p2, p3, p4, align="hv", axis="tblr")
 p1x <- ggdraw(all4[[1]])
@@ -273,14 +259,23 @@ p2x <- ggdraw(all4[[2]])
 p3x <- ggdraw(all4[[3]])
 p4x <- ggdraw(all4[[4]])
 
+ggsave("two_speed_genome_analysis_gene_distance_commonly_found_genes_presentation.pdf", plot = p4x, width = 3.25, height = 3.25)
 
-ggsave("two_speed_genome_analysis_repeat_distance_all_genes.pdf", plot = p1x, width = 3.25, height = 3.25)
 
-ggsave("two_speed_genome_analysis_repeat_distance_effectors.pdf", plot = p2x, width = 3.25, height = 3.25)
 
-ggsave("two_speed_genome_analysis_repeat_distance_never_found_genes.pdf", plot = p3x, width = 3.25, height = 3.25)
+```
 
-ggsave("two_speed_genome_analysis_repeat_distance_commonly_found_genes.pdf", plot = p4x, width = 3.25, height = 3.25)
+
+```{r}
+
+# print medians for all categories
+
+
+median(df$min_distance[df$common_gene == "Never on eccDNAs"])
+median(df$min_distance[df$common_gene == "Sometimes on eccDNAs"])
+median(df$min_distance[df$common_gene == "Commonly on eccDNAs" ])
+median(df$min_distance[df$common_gene != "Commonly on eccDNAs"])
+median(df$min_distance[df$common_gene != "Never on eccDNAs"])
 
 ```
 
@@ -292,15 +287,14 @@ observed <- median(df$min_distance[df$common_gene == "Commonly on eccDNAs" ]) - 
 
 # build null distribution
 permutation = replicate(10000, {
-  sample_small <- df[sample(nrow(df), nrow(df[df$common_gene == "Commonly on eccDNAs",]) , replace = FALSE), ] # one sample the size of eccdna associated genes
-  sample_large <- df[! rownames(df) %in% rownames(sample_small), ] # rest of the genes
-  median(sample_small$min_distance)-median(sample_large$min_distance) # calculate media between the two
+  sample_small <- df[sample(nrow(df), nrow(df[df$common_gene == "Commonly on eccDNAs",]) , replace = FALSE), ]# one sample the size of eccdna associated genes
+  sample_large <- df[! rownames(df) %in% rownames(sample_small), ]# rest of the genes
+  median(sample_small$min_distance)-median(sample_large$min_distance)# calculate median between the two
 })
 
 p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=10, colour="black", fill="white") + xlim(-150,150) + geom_vline(xintercept=observed)
 
 p
-
 ## pvalue is number of permutations that are bigger than observed
 
 p_value <- mean(permutation > observed)
@@ -309,7 +303,6 @@ p_value
 ```
 
 ```{r}
-
 ## permutation test to see if differences are significant
 
 # compare eccdna absent to other genes
@@ -317,15 +310,16 @@ observed <- median(df$min_distance[df$common_gene == "Never on eccDNAs" ]) - med
 
 permutation = replicate(10000, {
   sample_small <- df[sample(nrow(df), nrow(df[df$common_gene == "Never on eccDNAs",]) , replace = FALSE), ]# one sample the size of eccdna absent genes
-  sample_large <- df[! rownames(df) %in% rownames(sample_small), ] # rest of the genes
-  median(sample_small$min_distance)-median(sample_large$min_distance) # calculate media between the two
+  sample_large <- df[! rownames(df) %in% rownames(sample_small), ]# rest of the genes
+  median(sample_small$min_distance)-median(sample_large$min_distance)# calculate media between the two
 })
 
-p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=10, colour="black", fill="white") + xlim(-200,200) + geom_vline(xintercept=observed)
+p <- ggplot() + aes(permutation)+ geom_histogram(binwidth=10, colour="black", fill="white") + xlim(-150,150) + geom_vline(xintercept=observed)
 
 p
 
 ## pvalue is number of permutations that are bigger than observed
+
 
 p_value <- mean(permutation > observed)
 p_value

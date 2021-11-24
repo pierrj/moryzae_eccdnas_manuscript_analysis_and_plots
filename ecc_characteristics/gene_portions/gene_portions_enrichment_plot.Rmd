@@ -124,6 +124,7 @@ p <- ggplot(data=df, aes(x=gene_portion, y=log2_foldchange_micro, fill=labels))+
   coord_flip()+
   theme_classic()+
   ylab('Log2 fold enrichment')+
+  guides(fill = guide_legend(reverse=TRUE))+ # reverse legend order
   scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
                               "5'UTR", "3'UTR",'CpG islands',
                               'Genic', 'Intergrenic'))+ # rename x-axis
@@ -213,45 +214,90 @@ ggsave('gene_portions_plot_representative_micro.pdf', plot=p, width=3.25, height
 ## only looking at rice blast now
 # prepare data for plotting
 
-top <- df[df$organism=="Rice_blast",c(6,12)]
+expected_large_vector <- df$expected_large[df$organism=="Rice_blast"]
 
-colnames(top) <- c('gene_portion', 'log2_foldchange')
+expected_micro_vector <- df$expected_micro[df$organism=="Rice_blast"]
 
-top$ecc <- "micro"
+# read in moryzae data per sample
 
-bottom <- df[df$organism=="Rice_blast",c(6,13)]
+df_moryzae_large <- data.frame(fread('moryzae.observed_averages_large_all_samples'))
+df_moryzae_large <- subset(df_moryzae_large, select = -c(V10))
+colnames(df_moryzae_large) <- c('gene_portion', 'G3_1A', 'G3_1B', 'G3_1C',
+                                'G3_2A', 'G3_2B', 'G3_2C',
+                                'G3_3A', 'G3_3B')
 
-colnames(bottom) <- c('gene_portion', 'log2_foldchange')
+rownames(df_moryzae_large) <- df_moryzae_large$gene_portion
+df_moryzae_large <- subset(df_moryzae_large, select = -c(gene_portion))
 
-bottom$ecc <- "large"
+# get log fold change as before
+for (i in seq(from=1, to=length(expected_large_vector))) {
+  number = expected_large_vector[[i]]
+  vector = df_moryzae_large[i,1:8]
+  transformed <- log2(vector/number)
+  df_moryzae_large[i,1:8] <- transformed
+}
 
-df_riceblast_large_v_micro <- rbind(top, bottom)
+df_moryzae_large_stacked <- stack(df_moryzae_large)
+
+colnames(df_moryzae_large_stacked) <- c('fold_change','sample')
+
+df_moryzae_large_stacked$gene_portion <- rep(rownames(df_moryzae_large), 8)
+df_moryzae_large_stacked$ecc <- rep('large', nrow(df_moryzae_large_stacked))
+
+# read in moryzae data per sample
+
+df_moryzae_micro <- data.frame(fread('moryzae.observed_averages_micro_all_samples'))
+df_moryzae_micro <- subset(df_moryzae_micro, select = -c(V10))
+colnames(df_moryzae_micro) <- c('gene_portion', 'G3_1A', 'G3_1B', 'G3_1C',
+                                'G3_2A', 'G3_2B', 'G3_2C',
+                                'G3_3A', 'G3_3B')
+
+rownames(df_moryzae_micro) <- df_moryzae_micro$gene_portion
+df_moryzae_micro <- subset(df_moryzae_micro, select = -c(gene_portion))
+
+# get log fold change as before
+for (i in seq(from=1, to=length(expected_micro_vector))) {
+  number = expected_micro_vector[[i]]
+  vector = df_moryzae_micro[i,1:8]
+  transformed <- log2(vector/number)
+  df_moryzae_micro[i,1:8] <- transformed
+}
+
+df_moryzae_micro_stacked <- stack(df_moryzae_micro)
+
+colnames(df_moryzae_micro_stacked) <- c('fold_change','sample')
+
+df_moryzae_micro_stacked$gene_portion <- rep(rownames(df_moryzae_micro), 8)
+df_moryzae_micro_stacked$ecc <- rep('micro', nrow(df_moryzae_micro_stacked))
 
 
+df_moryzae <- rbind(df_moryzae_large_stacked, df_moryzae_micro_stacked)
 
-df_riceblast_large_v_micro$labels <- c(
-rep('MicroDNAs',9),
-rep('Large eccDNAs',9)
-)
-
-order <- c(
-'MicroDNAs',
-'Large eccDNAs'
-)
-
-df_riceblast_large_v_micro$labels <- factor(df_riceblast_large_v_micro$labels, levels=order)
+df_moryzae$gene_portion <- factor(df_moryzae$gene_portion, levels=c('exons', 'introns', 'upstream', 'downstream', 
+                                                    'five_prime_utr', 'three_prime_utr', 'cpg_islands', 'genic', 'intergenic'))
 
 ```
+
+```{r}
+troubleshooting
+
+df_moryzae_large
+
+log2(rowMeans(df_moryzae_large)/expected_large_vector)
+```
+
+
 
 ```{r}
 
 # enrichment for large and microdnas in magnaporthe only
 
-p <- ggplot(data=df_riceblast_large_v_micro, aes(x=gene_portion, y=log2_foldchange, fill=labels))+
-  geom_bar(stat='identity', position=position_dodge())+ 
-  geom_vline(xintercept = seq(1.5, 9, by = 1), color="black", size=.25, alpha=1)+
+p <- ggplot(data=df_moryzae, aes(x=gene_portion, y=fold_change, color=ecc))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(position=position_jitterdodge(), aes(color=ecc), size =0.5)+
   coord_flip()+
   theme_classic()+
+  geom_hline(yintercept = 0)+
   ylab('Log2 fold enrichment')+
   scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
                               "5'UTR", "3'UTR",'CpG islands',
@@ -261,7 +307,7 @@ p <- ggplot(data=df_riceblast_large_v_micro, aes(x=gene_portion, y=log2_foldchan
 
 p
 
-ggsave('gene_portions_plot_large_v_micro.pdf', plot=p, width=3.25, height=3.25, device = 'pdf')
+ggsave('gene_portions_plot_large_v_micro.pdf', plot=p, width=6.5, height=3.25, device = 'pdf')
 
 ```
 

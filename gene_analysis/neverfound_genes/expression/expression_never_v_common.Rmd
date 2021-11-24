@@ -51,7 +51,7 @@ p <- ggplot(df, aes(x=common_or_never, y=rpkm)) + geom_boxplot() + theme_classic
 
 p
 
-ggsave("expression_never_v_common_boxplot.pdf", plot = p, width = 2, height = 2)
+ggsave("expression_never_v_common_boxplot.pdf", plot = p, width = 3, height = 2)
 
 ```
 

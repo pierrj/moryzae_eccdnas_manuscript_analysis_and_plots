@@ -180,6 +180,6 @@ p1 <- ggplot() +
 leg <- get_legend(p1)
 my_legend <- as_ggplot(leg)
 
-ggsave('legend.pdf', plot = leg, width = 3.25, height = 0.5)
+ggsave('legend_abstract.pdf', plot = leg, width = 3.25, height = 0.5)
 ```
 

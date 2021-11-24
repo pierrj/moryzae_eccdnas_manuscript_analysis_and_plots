@@ -35,9 +35,9 @@ citation('gt')
 
 ## WGS false positive table
 
-df <- data.frame(t(data.frame(c(222477896, 12, 195, 195/222477896*1000000),
-                 c(73760888, 15, 210, 210/73760888*1000000),
-                 c(168585640, 5, 66, 66/168585640*1000000))))
+df <- data.frame(t(data.frame(c(55248286, 12, 195, 195/55248286*1000000),
+                 c(92346262, 8, 81, 81/92346262*1000000),
+                 c(39133840, 5, 66, 66/39133840*1000000))))
 
 # fix sigfigs
 sigfigs <- function(x) {
@@ -49,7 +49,7 @@ df[] <- lapply(df, sigfigs)
 
 colnames(df) <- c('Read count','EccDNA forming regions', 'Junction split reads', 'False positives per million reads')
 
-df$rownames <- c('ERR2660591', 'ERR5060418', 'SRR11528297')
+df$rownames <- c('ERR2660591', 'SRR16282278', 'SRR11528297')
 
 ## just table formatting
 
