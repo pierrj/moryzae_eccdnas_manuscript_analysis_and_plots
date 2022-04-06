@@ -67,7 +67,7 @@ p <- ggplot(df, aes(x=effector, y=srs)) + geom_boxplot() + theme_classic() + yla
 
 p
 
-ggsave("effectors_on_eccdnas_boxplot.pdf", plot = p, width = 2, height = 4)
+ggsave("effectors_on_eccdnas_boxplot.pdf", plot = p, width = 3, height = 2)
 
 
 ```

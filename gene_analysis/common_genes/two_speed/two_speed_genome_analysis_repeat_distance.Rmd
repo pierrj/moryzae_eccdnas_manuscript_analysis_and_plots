@@ -174,6 +174,7 @@ p1 <- ggplot(df, aes(x=distance_five, y=distance_three)) +
   geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
   xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
   annotation_logticks() + # special logtick tick marks
+      theme_classic()+
   scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) + # logticks
   scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
   labs(fill = "Gene density")+
@@ -194,9 +195,10 @@ p2 <- ggplot(df[df$effector == TRUE,], aes(x=distance_five, y=distance_three)) +
   scale_fill_distiller(palette = "Greens", direction = 1) +
   geom_segment(aes(x=x_int,xend=x_int,y=-Inf,yend=y_int), size =0.5, linetype='dashed') + ## draw median segments for all genes
   geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
-  geom_text(data = known_effectors_table, aes(x=distance_five, y=distance_three, label=known_effector_name)) + # label known effectors
+  geom_text(data = known_effectors_table, aes(x=distance_five, y=distance_three, label=known_effector_name), size = 3, fontface = "italic") + # label known effectors
   xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
   annotation_logticks() +# special logtick tick marks
+      theme_classic()+
   scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
   scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
   labs(fill = "Predicted effector \ndensity")+
@@ -221,6 +223,7 @@ p3 <- ggplot(df[df$common_gene == "Never on eccDNAs",],
   geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
   xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
   annotation_logticks() +# special logtick tick marks
+      theme_classic()+
   scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
   scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
   labs(fill = "eccDNA-absent \ngene density")+
@@ -242,6 +245,7 @@ p4 <- ggplot(df[df$common_gene == "Commonly on eccDNAs",],
   geom_segment(aes(x=-Inf,xend=x_int,y=y_int,yend=y_int), size =0.5, linetype='dashed') +
   xlab("5' Distance to nearest repeat (kbp)") + ylab("3' Distance to nearest repeat (kbp)") +
   annotation_logticks() +# special logtick tick marks
+      theme_classic()+
   scale_x_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +# logticks
   scale_y_continuous(breaks=0:5, labels=c("0.01", "0.01", "0.1", "1", "10", "100"), limits = c(0.5,4.5)) +
   labs(fill = "eccDNA-associated \ngene density")+
@@ -304,7 +308,7 @@ p
 ## pvalue is number of permutations that are bigger than observed
 
 p_value <- mean(permutation > observed)
-p_value
+1- p_value
 
 ```
 

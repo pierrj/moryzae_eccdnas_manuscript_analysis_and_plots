@@ -57,15 +57,13 @@ df$status[df$splitreads == 0] <- 'eccDNA-absent'
 
 # call common and never found genes based off previously identified cutoffs
 
-n_common_genes <- floor(length(df$splitreads[df$splitreads != 0])/10)
+common_genes <- data.frame(fread('G3.common.genes', header=FALSE))
 
-common_genes_cutoff <- sort(df$splitreads, decreasing=TRUE)[n_common_genes]
+common_genes <- common_genes$V1
 
-df$status[df$splitreads >= common_genes_cutoff] <- 'eccDNA-associated'
+df$status[df$gene %in% common_genes] <- 'eccDNA-associated'
 
 df$status[is.na(df$status)] <- 'Other genes'
-
-df
 
 ```
 
@@ -141,7 +139,7 @@ known_genes_table <- known_genes_table[! startsWith(known_genes_table$name_70_15
 
 # sort genes by absent or associated
 
-known_genes_table_associated <- known_genes_table[known_genes_table$splitreads > -0.4279071,]
+known_genes_table_associated <- known_genes_table[known_genes_table$gene %in% common_genes,]
 
 known_genes_table_absent <- known_genes_table[known_genes_table$splitreads == min(known_genes_table$splitreads),]
 
@@ -175,10 +173,8 @@ p1 <- ggplot() +
   geom_point(data = df_subset[df_subset$status=="Other genes",], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
   geom_point(data = df_subset[df_subset$status=="eccDNA-absent",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-absent'),size=0.1) +
   geom_point(data = df_subset[df_subset$status=="eccDNA-associated",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-associated'),size=0.1) +
-  geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
-                   yend=log10(common_genes_cutoff)),colour='#E6AB02')+
-      geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) + # repel is great here to make the labels not run into each other much
+      geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, fontface="italic") +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075,fontface="italic") + # repel is great here to make the labels not run into each other much
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 
@@ -266,11 +262,8 @@ p2 <- ggplot() +
   geom_point(data = df_subset[df_subset$status=="Other genes",], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
   geom_point(data = df_subset[df_subset$status=="eccDNA-absent",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-absent'),size=0.1) +
   geom_point(data = df_subset[df_subset$status=="eccDNA-associated",], aes(x=BASE_TOTAL, y=splitreads, color='eccDNA-associated'),size=0.1) +
-  geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])), 
-                y=log10(common_genes_cutoff), 
-                yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
-        geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2) +
-      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075) +# repel is great here to make the labels not run into each other much
+        geom_text(data = known_genes_table_associated, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, fontface="italic") +
+      geom_text_repel(data = known_genes_table_absent, aes(x=BASE_TOTAL, y=splitreads, label=name_70_15), size =2, min.segment.length = 0, max.overlaps = 100, segment.linetype = 2, force = 0.075,fontface="italic") +# repel is great here to make the labels not run into each other much
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) +  # setting ticks is really hard here 

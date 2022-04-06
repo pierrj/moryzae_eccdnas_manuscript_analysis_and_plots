@@ -141,7 +141,8 @@ for (te in te_list) {
     #geom_smooth(method='lm', color='red') +
     labs(x="Log10 reads per million", y="Log10 split reads per million") + theme_classic() + 
     labs(title=element_label, subtitle=paste('cor = ', cor, sep=''))+ # paste correlation to plot
-    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), plot.title=element_text(size=8, hjust=0.5), plot.subtitle=element_text(size=6, hjust=0.5))
+    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), plot.title=element_text(size=8, hjust=0.5), plot.subtitle=element_text(size=6, hjust=0.5))+
+    theme(plot.title=element_text(face="italic"))
 
   
   # save correlation plots

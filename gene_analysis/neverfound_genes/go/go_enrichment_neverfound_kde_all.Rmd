@@ -183,7 +183,9 @@ p_cc <- ggplot(filtered_df_CC, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
   geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
-  xlab("Observed count over expected count") + ylab("Cellular componet") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  xlab("Observed count over expected count") + ylab("Cellular component") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8), plot.title=element_text(size=8)) + labs(title = 'EccDNA-absent genes')+
+  guides(colour = guide_colorbar(order = 1), 
+              size = guide_legend(order = 2))
 
 ggsave("neverfound_go_enrichment_cc.pdf", plot = p_cc, width = 6.5, height = 3.5)
 
@@ -192,7 +194,9 @@ p_bp <- ggplot(filtered_df_BP, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
   geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
-  xlab("Observed count over expected count") + ylab("Biological pathway") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  xlab("Observed count over expected count") + ylab("Biological pathway") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8)) +
+  guides(colour = guide_colorbar(order = 1), 
+              size = guide_legend(order = 2))
 
 ggsave("neverfound_go_enrichment_bp.pdf", plot = p_bp, width = 6.5, height = 3.5)
 
@@ -201,7 +205,9 @@ p_mf <- ggplot(filtered_df_MF, aes(x = observed_expected_ratio, y = terms)) +
   geom_point(aes(color=chi, size=annotated)) + theme_classic() +
   scale_colour_gradient(low = "blue", high = "red") +
   geom_rect(mapping=aes(xmin=-Inf, xmax=1, ymin=-Inf, ymax=Inf), color="grey", alpha=0.01) +# rectangle shows the mark for observed/expected is 1
-  xlab("Observed count over expected count") + ylab("Molecular function") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+  xlab("Observed count over expected count") + ylab("Molecular function") + labs(color = "-Log10 p-value", size = "Number of genes \nwith annotation")+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8)) +
+  guides(colour = guide_colorbar(order = 1), 
+              size = guide_legend(order = 2))
 
 ggsave("neverfound_go_enrichment_mf.pdf", plot = p_mf, width = 6.5, height = 3.5)
 

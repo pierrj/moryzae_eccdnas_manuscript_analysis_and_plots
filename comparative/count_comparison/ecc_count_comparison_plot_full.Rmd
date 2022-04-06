@@ -62,8 +62,7 @@ df$organism <- sub("_", " ", df$organism)
 df$organism <- factor(df$organism, levels = c("M. oryzae", "H. sapiens", "S. cerevisiae", "A. thaliana", "O. sativa"))
 
 # make symbols for diffrent sample types within studies
-df$symbol <- c(rep('circle', 8), rep('circle',9), rep('circle',16), rep('triangle',16), rep('circle',2), rep('empty',2), rep('triangle',3), rep('circle',2),
-                    rep('diamond',2), rep('circle',4), rep('square',4), rep('triangle',2), rep('diamond',2), rep('diamond',3), rep('square',3), 
+df$symbol <- c(rep('circle', 3), rep('triangle', 3), rep('square',2), rep('circle',9), rep('circle',16), rep('triangle',16), rep('circle',2), rep('empty',2), rep('triangle',3), rep('circle',2), rep('diamond',2), rep('circle',4), rep('square',4), rep('triangle',2), rep('diamond',2), rep('diamond',3), rep('square',3), 
                rep('triangle',3), rep('circle',3))
 
 

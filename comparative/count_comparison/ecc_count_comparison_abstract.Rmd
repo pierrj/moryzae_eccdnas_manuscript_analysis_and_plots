@@ -134,7 +134,7 @@ p1
 
 
 
-ggsave('test.pdf', plot=p1, width=3.25, height=3.5, device = 'pdf')
+ggsave('circularome_size.pdf', plot=p1, width=3.25, height=3.5, device = 'pdf')
 
 
 
@@ -161,7 +161,7 @@ p2
 
 
 
-ggsave('test2.pdf', plot=p2, width=3.25, height=3.5, device = 'pdf')
+ggsave('genome_size.pdf', plot=p2, width=3.25, height=3.5, device = 'pdf')
 
 
 ```

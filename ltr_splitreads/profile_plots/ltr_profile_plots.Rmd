@@ -85,10 +85,54 @@ p <- ggplot(df, aes(x=bin, y=val)) + geom_line(color=te_color, lwd=0.5) + theme_
   theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) +
   theme(axis.ticks.x = element_line(colour=c('black', 'black', 'transparent', 'black', 'black',
                                              'transparent', 'black', 'black'))) + # invisible ticks to properly set up LTR labels
-  ylab('Normalized read coverage') + xlab(element_label)
+  ylab('Normalized read coverage') + xlab(element_label)+ theme(axis.title.x=element_text(face="italic"))
 
 ggsave(paste(element,'_plot_profile.pdf',sep=''), plot=p, width=(6.5/3), height=2)
 
+}
+
+```
+
+
+```{r}
+
+## now for wgs controls
+
+for (te in te_list) {
+  
+element <- te[[1]]
+element_label <- te[[2]]
+te_ltr_length <- as.numeric(te[[3]])
+te_internal_length <- as.numeric(te[[4]])
+te_color <- te[[5]]
+  
+# read in data for te
+df_read <- t(data.frame(fread(paste(element,".readcoverage.normalized_and_average.wgs.tab", sep=''))))
+# reorganize data frame for plotting
+df <- data.frame( bin=as.vector(df_read[3:nrow(df_read),1]),
+                  val=c(df_read[3:nrow(df_read),2]),
+                  label=c(rep('coverage',300)))
+# change to numeric for workability
+df$bin <- as.numeric(as.character(df$bin))
+df$val <- as.numeric(as.character(df$val))
+# set up tick marks for LTRs
+te_total_length <- te_ltr_length + te_ltr_length + te_internal_length
+ltr_one_start <- 100
+ltr_one_end <- (te_ltr_length/te_total_length * 100) + 100
+ltr_one_middle <- ltr_one_start + ((ltr_one_end-ltr_one_start)/2)
+ltr_two_start <- 200 - (te_ltr_length/te_total_length * 100)
+ltr_two_end <- 200
+ltr_two_middle <- ltr_two_start + ((ltr_two_end-ltr_two_start)/2)
+# plot profile plots for each element
+p <- ggplot(df, aes(x=bin, y=val)) + geom_line(color=te_color, lwd=0.5) + theme_classic() +
+  scale_x_continuous(labels=c('-0.3kb', '', 'LTR', '', '', 'LTR', '', '0.3kb'), 
+                     breaks=c(70,ltr_one_start, ltr_one_middle, ltr_one_end, ltr_two_start, ltr_two_middle, ltr_two_end,230),
+                     limits = c(70,230)) + 
+  theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.text=element_text(size=8)) +
+  theme(axis.ticks.x = element_line(colour=c('black', 'black', 'transparent', 'black', 'black',
+                                             'transparent', 'black', 'black'))) + # invisible ticks to properly set up LTR labels
+  ylab('Normalized read coverage') + xlab(element_label) + theme(axis.title.x=element_text(face="italic"))
+ggsave(paste(element,'_plot_profile_wgs.pdf',sep=''), plot=p, width=(6.5/3), height=2)
 }
 
 ```

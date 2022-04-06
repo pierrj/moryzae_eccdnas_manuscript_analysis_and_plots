@@ -139,17 +139,30 @@ colors <- c('copia1' = "#E6AB02",
 'MGRL3' = "#E7298A",
 'PYRET' = "#66A61E")
 
+# make vector to add shapes indicating biological replicates
+
+replicate_n <- 6
+
+biorep_shapes_vector <- c('circle', 'circle', 'circle', 'triangle', 'triangle', 'triangle', 'square', 'square')
+
+biorep_shapes_vector <- factor(biorep_shapes_vector, levels = c('circle', 'triangle', 'square'))
+
+final_shapes_vector <- rep(biorep_shapes_vector, each = replicate_n)
+
+shape_values <- c(19, 17, 15)
+
 # boxplot for ltr_ltr splitreads
 
 p <- ggplot(data=df_ltr_ltr_srs_final, aes(x=element, y=normalized_ltr_ltr_srs, color=element))+
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(position=position_jitter(0.2)) +
+  geom_jitter(position=position_jitter(0.2), aes(shape=final_shapes_vector)) +
+    scale_shape_manual(values=shape_values, labels = c('Biorep 1', 'Biorep 2', 'Biorep 3')) +
   theme_classic()+
   ylab('LTR-LTR splitreads \nper million mapped reads')+
   xlab('')+
   scale_color_manual(values = colors)+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
-  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')+ theme(axis.text.x=element_text(face="italic"))
 
 p
 
@@ -165,13 +178,14 @@ ggsave('ltr_ltr_splitreads_normalized_barplot.pdf', plot = p, width = (6.5/2), h
 
 p <- ggplot(data=df_ltr_internal_srs_final, aes(x=element, y=normalized_ltr_internal_srs, color=element))+
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(position=position_jitter(0.2)) +
+  geom_jitter(position=position_jitter(0.2), aes(shape=final_shapes_vector)) +
+    scale_shape_manual(values=shape_values, labels = c('Biorep 1', 'Biorep 2', 'Biorep 3')) +
   theme_classic()+
-  ylab('LTR-LTR splitreads \nper million mapped reads')+
+  ylab('LTR-internal splitreads \nper million mapped reads')+
   xlab('')+
   scale_color_manual(values = colors)+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+
-  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')+ theme(axis.text.x=element_text(face="italic"))
 
 p
 

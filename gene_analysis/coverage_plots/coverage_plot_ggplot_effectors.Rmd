@@ -44,6 +44,7 @@ df_splitreads <- data.frame(fread('G3.normalized.splitreadspergene'))
 colnames(df) <- c('CHROMOSOME', 'start', 'end', 'gene')
 
 ## a lot of work to draw one dot at the middle of each gene
+
 df$CHROMOSOME <- as.numeric(substring(df$CHROMOSOME, 11, 12))
                           
 df$middle <- df$start + (df$end - df$start) * 0.5
@@ -54,17 +55,15 @@ df$status <- NA
 
 df$status[df$splitreads == 0] <- 'eccDNA-absent'
 
-
 # call common and never found genes based off previously identified cutoffs
-n_common_genes <- floor(length(df$splitreads[df$splitreads != 0])/10)
 
-common_genes_cutoff <- sort(df$splitreads, decreasing=TRUE)[n_common_genes]
+common_genes <- data.frame(fread('G3.common.genes', header=FALSE))
 
-df$status[df$splitreads >= common_genes_cutoff] <- 'eccDNA-associated'
+common_genes <- common_genes$V1
+
+df$status[df$gene %in% common_genes] <- 'eccDNA-associated'
 
 df$status[is.na(df$status)] <- 'Other genes'
-
-df
 
 ```
 
@@ -184,9 +183,7 @@ df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
 p1 <- ggplot() + 
   geom_point(data = df_subset[df_subset$EFFECTOR==FALSE,], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
   geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) + # write candidate effectors in green
-  geom_segment(aes(x=0, xend=(sum(v[1:1]) - v[1] + sum(v[1:end_subset_first_few])), y=log10(common_genes_cutoff), 
-                   yend=log10(common_genes_cutoff)),colour='#E6AB02')+
-    geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) + # label known effectors
+    geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2, fontface="italic") + # label known effectors
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 
@@ -272,10 +269,7 @@ df_subset <- df[df$CHROMOSOME >= start_subset & df$CHROMOSOME <= end_subset,]
 p2 <- ggplot() + 
   geom_point(data = df_subset[df_subset$EFFECTOR==FALSE,], aes(x=BASE_TOTAL, y=splitreads, color='Other genes'),size=0.1)+
   geom_point(data = df_subset[df_subset$EFFECTOR==TRUE,], aes(x=BASE_TOTAL, y=splitreads, color='Predicted effectors'),size=0.1) + # call effectors green
-  geom_segment(aes(x=(sum(v[1:start_subset]) - v[start_subset]), xend=(sum(v[1:end_subset])),
-                y=log10(common_genes_cutoff),
-                yend=log10(common_genes_cutoff) ),colour='#E6AB02')+
-      geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2) + # label known effector names
+      geom_text(data = known_effectors_table, aes(x=BASE_TOTAL, y=splitreads, label=known_effector_name), size =2,fontface="italic") + # label known effector names
   scale_x_continuous(labels=labs, breaks = ticks,
                      limits = c((sum(v[1:start_subset]) - v[start_subset]),
                            sum(v[1:start_subset]) - v[start_subset] + sum(v[1:end_subset_first_few]))) + # setting ticks is really hard here 

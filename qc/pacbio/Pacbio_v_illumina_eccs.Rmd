@@ -49,6 +49,14 @@ df_percent_overlap <- data.frame(
 
 colnames(df_percent_overlap) <- c('type', 'percent')
 
+biorep_shapes_vector <- c('circle', 'circle', 'circle', 'triangle', 'triangle', 'triangle', 'square', 'square')
+
+biorep_shapes_vector <- factor(biorep_shapes_vector, levels = c('circle', 'triangle', 'square'))
+
+final_shapes_vector <- rep(biorep_shapes_vector, 2)
+
+shape_values <- c(19, 17, 15)
+
 
 
 ```
@@ -59,10 +67,11 @@ colnames(df_percent_overlap) <- c('type', 'percent')
 ## plot boxplot
 
 p <- ggplot(df_percent_overlap, aes(x=type, y=percent)) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2))+
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(shape=final_shapes_vector))+
+  scale_shape_manual(values=shape_values)+
   scale_y_continuous(limits=c(0,100.01))+ # better y axis
   ylab("Percent overlap") + xlab("") + 
-    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position = 'bottom')
+    theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_blank(), legend.position = 'none')
 
 
 p

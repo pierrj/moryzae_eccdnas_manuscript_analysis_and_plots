@@ -1,0 +1,56 @@
+---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+title: "venn_diagram_common_genes"
+output: html_document
+---
+
+```{r}
+
+library(ggVennDiagram)
+library(ggplot2)
+
+```
+
+```{r}
+
+g3_1 <- read.table(file = "G3_1.common.genes", header=FALSE, sep='\t')
+g3_2 <- read.table(file = "G3_2.common.genes", header=FALSE, sep='\t')
+g3_3 <- read.table(file = "G3_3.common.genes", header=FALSE, sep='\t')
+
+g3_1 <- as.character(g3_1$V1)
+g3_2 <- as.character(g3_2$V1)
+g3_3 <- as.character(g3_3$V1)
+
+all_bioreps <- list(g3_1, g3_2,g3_3)
+
+```
+
+```{r}
+
+p <- ggVennDiagram(x = all_bioreps, category.names=c('Bio Rep 1', 'Bio Rep 2', 'Bio Rep 3'), set_size = 2, label_size = 2, label_alpha=0) +
+ theme(legend.position = "none") + scale_color_manual(values = c('black', 'black', 'black')) + scale_fill_gradient(low = 'white', high='white') + theme(text = element_text(size = 8))
+
+
+ggsave("venn_common_genes.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+```

@@ -52,6 +52,18 @@ df$te <- factor(df$te, levels=c('MAGGY', 'MGRL3', 'copia1', 'GYMAG1', 'GYMAG2', 
 
 ```{r}
 
+# make vector to add shapes indicating biological replicates
+
+replicate_n <- 6
+
+biorep_shapes_vector <- c('circle', 'circle', 'circle', 'triangle', 'triangle', 'triangle', 'square', 'square')
+
+biorep_shapes_vector <- factor(biorep_shapes_vector, levels = c('circle', 'triangle', 'square'))
+
+final_shapes_vector <- rep(biorep_shapes_vector, each = replicate_n)
+
+shape_values <- c(19, 17, 15)
+
 ## keep colors consistent
 
 colors <- c('copia1' = "#E6AB02",
@@ -64,11 +76,13 @@ colors <- c('copia1' = "#E6AB02",
 # percent of reads
 
 p <- ggplot(df, aes(x=te, y=percent_per_te, color = te)) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(shape=final_shapes_vector)) +
+  scale_shape_manual(values=shape_values, labels = c('Biorep 1', 'Biorep 2', 'Biorep 3')) +
+    theme_classic()+
   scale_color_manual(values=colors)+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # order axis
   coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
-  ylab('Percent of eccDNA \nsequencing reads')
+  ylab('Percent of eccDNA \nsequencing reads')+ theme(axis.text.y =element_text(face="italic"))
 
 p
 
@@ -92,7 +106,7 @@ p <- ggplot(df_G3_1A, aes(x=te, y=percent_genome_per_te, fill=te)) +
   ylab('Percent of genome')+
   xlab('')+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # reorder
-  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.position = 'none')+ theme(axis.text.x =element_text(face="italic"))
 
 p
 
@@ -106,11 +120,13 @@ ggsave('ltr_te_genome_percentage.pdf', plot = p, width = (6.5/2), height = 2)
 # normalized percent of reads
 
 p <- ggplot(df, aes(x=te, y=percent_per_te_normalized, color = te)) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2)) +
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(shape=final_shapes_vector)) +
+    scale_shape_manual(values=shape_values, labels = c('Biorep 1', 'Biorep 2', 'Biorep 3')) +
   scale_color_manual(values=colors)+
+    theme_classic()+
   scale_x_discrete(labels=c('MAGGY', 'MGRL3', 'Copia1', 'GYMAG1', 'GYMAG2', 'PYRET'))+ # reorder
   coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), axis.title.y=element_blank(), legend.title=element_blank(), legend.position = "none")+
-  ylab('Percent of eccDNA sequencing reads \nover percent of the genome')
+  ylab('Percent of eccDNA sequencing reads \nover percent of the genome')+ theme(axis.text.y =element_text(face="italic"))
 
 p
 

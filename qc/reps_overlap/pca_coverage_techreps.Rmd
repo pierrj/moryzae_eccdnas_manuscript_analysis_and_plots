@@ -1,0 +1,73 @@
+---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+title: "pca_coverage_techreps"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(ggbiplot)
+```
+
+```{r}
+
+df <- data.frame(fread('all.genomecoverage.normalized.transposed.splitreads.10kbp'))
+
+rownames(df) <- c('G3_1A', 'G3_1B', 'G3_1C', 'G3_2A', 'G3_2B', 'G3_2C', 'G3_3A', 'G3_3B')
+
+df <- df[ , which(apply(df, 2, var) != 0)]
+
+groups <- c('Bio Rep 1', 'Bio Rep 1', 'Bio Rep 1', 'Bio Rep 2', 'Bio Rep 2', 'Bio Rep 2', 'Bio Rep 3', 'Bio Rep 3')
+
+
+```
+
+```{r}
+
+coverage_pca <- prcomp(df,scale = TRUE)
+
+```
+
+```{r}
+
+p <- ggbiplot(coverage_pca, var.axes = F, 
+         alpha = 0,
+         choices = c(1,2)) + geom_point(aes(shape=factor(groups))) + theme(legend.position = 'null')
+
+ggsave("coverage_pca_12.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+p <- ggbiplot(coverage_pca, var.axes = F, 
+         alpha = 0,
+         choices = c(3,4)) + geom_point(aes(shape=factor(groups))) + theme(legend.position = 'null')
+
+ggsave("coverage_pca_34.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+p <- ggbiplot(coverage_pca, var.axes = F, 
+         alpha = 0,
+         choices = c(5,6)) + geom_point(aes(shape=factor(groups))) + theme(legend.position = 'null')
+
+ggsave("coverage_pca_56.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+
+```
+

@@ -278,36 +278,47 @@ df_moryzae$gene_portion <- factor(df_moryzae$gene_portion, levels=c('exons', 'in
 
 ```
 
-```{r}
-troubleshooting
-
-df_moryzae_large
-
-log2(rowMeans(df_moryzae_large)/expected_large_vector)
-```
-
-
 
 ```{r}
+
+# make vector to add shapes indicating biological replicates
+
+replicate_n <- 9
+
+biorep_shapes_vector <- c('circle', 'circle', 'circle', 'triangle', 'triangle', 'triangle', 'square', 'square')
+
+biorep_shapes_vector <- factor(biorep_shapes_vector, levels = c('circle', 'triangle', 'square'))
+
+final_shapes_vector <- rep(biorep_shapes_vector, each = replicate_n)
+
+shape_values <- c(19, 17, 15)
+
+
+# extra
+
+final_shapes_vector <- rep(final_shapes_vector, 2)
 
 # enrichment for large and microdnas in magnaporthe only
 
+
 p <- ggplot(data=df_moryzae, aes(x=gene_portion, y=fold_change, color=ecc))+
   geom_boxplot(outlier.shape = NA)+
-  geom_jitter(position=position_jitterdodge(), aes(color=ecc), size =0.5)+
+  geom_jitter(position=position_jitterdodge(), aes(color=ecc, shape=final_shapes_vector), size =2)+
+  scale_shape_manual(values=shape_values, labels = c('Biorep 1', 'Biorep 2', 'Biorep 3')) +
+  scale_color_discrete(labels = c('Large', 'Micro'))+
   coord_flip()+
   theme_classic()+
   geom_hline(yintercept = 0)+
   ylab('Log2 fold enrichment')+
   scale_x_discrete(labels=c('Exons', 'Introns', 'Upstream', 'Downstream',
                               "5'UTR", "3'UTR",'CpG islands',
-                              'Genic', 'Intergrenic'))+
+                              'Genic', 'Intergenic'))+
   theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6),
         axis.title.y=element_blank(), legend.position='bottom')
 
 p
 
-ggsave('gene_portions_plot_large_v_micro.pdf', plot=p, width=6.5, height=3.25, device = 'pdf')
+ggsave('gene_portions_plot_large_v_micro.pdf', plot=p, width=6.5, height=5, device = 'pdf')
 
 ```
 

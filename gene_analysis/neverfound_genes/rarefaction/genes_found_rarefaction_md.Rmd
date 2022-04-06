@@ -76,6 +76,7 @@ p <- ggplot(df_observed, aes(steps, means)) + geom_point(aes(color="red")) + geo
 #  geom_errorbar(data=df_expected, aes(ymin=means-2*sd, ymax=means+2*sd), width=30000) +
   scale_x_continuous(labels = comma, expand = expand_scale()) +
   scale_y_continuous(labels = comma, expand = expand_scale()) +
+  theme_classic()+
   labs(x="Sampled eccDNA forming regions",
        y="Genes found fully encompassed \nby eccDNA forming regions") + coord_cartesian(ylim = c(0, 12115)) +
   scale_color_identity(name = "",

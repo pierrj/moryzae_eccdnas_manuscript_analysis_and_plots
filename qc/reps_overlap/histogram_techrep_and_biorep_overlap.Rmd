@@ -1,0 +1,87 @@
+---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+title: "histogram_techrep_and_biorep_overlap"
+output: html_document
+---
+```{r}
+library(ggplot2)
+```
+
+```{r}
+
+tolerance <- factor(c(
+  rep('Exact Coordinates', 4),
+  rep('Within 10 bp', 4),
+  rep('Within 100 bp', 4),
+  rep('Within 1000 bp', 4)
+), levels = c('Exact Coordinates', 'Within 10 bp', 'Within 100 bp', 'Within 1000 bp'))
+
+rep_labels <- factor(c(
+  rep(c('Bio Rep 1', 'Bio Rep 2', 'Bio Rep 3','All Bio Reps'), 4)
+), levels = c('Bio Rep 1', 'Bio Rep 2', 'Bio Rep 3','All Bio Reps'))
+
+
+## data taken from venn_diagram_stats.ipynb
+overlap_percent <- c(
+  68069/sum(c(130044, 103008, 135027, 10483, 14661, 19537, 68069))*100,
+  53972/sum(c(148833, 145085, 147818, 15571, 10809, 12797, 53972))*100,
+  72246/sum(c(108715, 123017, 0, 72246, 0, 0, 0))*100,
+  99453/sum(c(328584, 393058, 172075, 31358, 11016, 21434, 99453))*100,
+  163085/sum(c(103088, 80833, 98995, 7557, 10851, 16420, 163085))*100,
+  143697/sum(c(115667, 115811, 116351, 16695, 12826, 13838, 143697))*100,
+  133076/sum(c(81969, 88933, 0, 133076, 0, 0, 0))*100,
+  248304/sum(c(263959, 330926, 140543, 39119, 14511, 19616, 248304))*100,
+  233004/sum(c(74382, 57272, 66962, 14313, 14673, 20223, 233004))*100,
+  243608/sum(c(63594, 64785, 63702, 36730, 31338, 31128, 243608))*100,
+  177186/sum(c(61119, 65673, 0, 177186, 0, 0, 0))*100,
+  442906/sum(c(152087, 172295, 75263, 118567, 57692, 38168, 442906))*100,
+  423667/sum(c(6837, 4582, 5220, 13007, 9941, 17575, 423667))*100,
+  500970/sum(c(3310, 3329, 2853, 8896, 7763, 7764, 500970))*100,
+  280794/sum(c(10938, 12246, 0, 280794, 0, 0, 0))*100,
+  100067/sum(c(10350, 3464, 3523, 22463, 4366, 12136, 100067))*100
+)
+
+df_overlaps <- data.frame(
+  rep_labels,
+  tolerance,
+  overlap_percent
+)
+
+```
+
+```{r}
+
+p <- ggplot(data=df_overlaps, aes(x=tolerance, y=overlap_percent, fill=rep_labels))+
+  geom_bar(stat='identity', position=position_dodge())+
+  theme_classic()+
+  ylab('Percent of eccDNA forming regions \nfound in all samples')+
+  xlab('')+
+  scale_y_continuous(limits=c(0,100),breaks=c(0, 25, 50, 75,100), labels=c('0', '25', '50', '75','100'))+
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.text=element_text(size=6), legend.position='bottom')
+
+p
+
+ggsave('histogram_percent_overlap.pdf', plot=p, width=6.5, height=4, device = 'pdf')
+
+```
+

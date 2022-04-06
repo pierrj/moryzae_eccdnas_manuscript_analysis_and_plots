@@ -89,7 +89,7 @@ vector_3 <- c("EccDNA-absent genes", "EccDNA-absent genes",
               "EccDNA-associated genes", "EccDNA-associated genes")
 
 plot_df <- data.frame(vector_1,vector_2,vector_3)
-z
+
 plot_df$vector_2 <- factor(plot_df$vector_2,levels = c("M. oryzae Guy11 genes absent in \nat least one genome", "M. oryzae Guy11 genes present in \nall genomes"))
 
 plot_df$vector_3 <- factor(plot_df$vector_3,levels = c("EccDNA-associated genes", "Other genes", "EccDNA-absent genes"))

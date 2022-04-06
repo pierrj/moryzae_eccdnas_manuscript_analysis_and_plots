@@ -1,0 +1,159 @@
+---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+title: "venn_diagram_tech_and_biorep_overlaps"
+output: html_document
+---
+
+
+```{r}
+library(ggVennDiagram)
+library(ggplot2)
+```
+
+```{r}
+
+
+G3_1A <- read.table(file = "G3_1A.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_1A$V1 <- as.character(G3_1A$V1)
+G3_1A$V2 <- as.character(G3_1A$V2)
+G3_1A$V3 <- as.character(G3_1A$V3)
+
+G3_1A <- unique(paste(G3_1A$V1,G3_1A$V2,G3_1A$V3, sep=''))
+
+G3_1B <- read.table(file = "G3_1B.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_1B$V1 <- as.character(G3_1B$V1)
+G3_1B$V2 <- as.character(G3_1B$V2)
+G3_1B$V3 <- as.character(G3_1B$V3)
+
+G3_1B <- unique(paste(G3_1B$V1,G3_1B$V2,G3_1B$V3, sep=''))
+
+G3_1C <- read.table(file = "G3_1C.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_1C$V1 <- as.character(G3_1C$V1)
+G3_1C$V2 <- as.character(G3_1C$V2)
+G3_1C$V3 <- as.character(G3_1C$V3)
+
+G3_1C <- unique(paste(G3_1C$V1,G3_1C$V2,G3_1C$V3, sep=''))
+
+g3_1_list <- list(G3_1A, G3_1B, G3_1C)
+
+```
+
+```{r}
+G3_2A <- read.table(file = "G3_2A.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_2A$V1 <- as.character(G3_2A$V1)
+G3_2A$V2 <- as.character(G3_2A$V2)
+G3_2A$V3 <- as.character(G3_2A$V3)
+
+G3_2A <- unique(paste(G3_2A$V1,G3_2A$V2,G3_2A$V3, sep=''))
+
+G3_2B <- read.table(file = "G3_2B.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_2B$V1 <- as.character(G3_2B$V1)
+G3_2B$V2 <- as.character(G3_2B$V2)
+G3_2B$V3 <- as.character(G3_2B$V3)
+
+G3_2B <- unique(paste(G3_2B$V1,G3_2B$V2,G3_2B$V3, sep=''))
+
+G3_2C <- read.table(file = "G3_2C.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_2C$V1 <- as.character(G3_2C$V1)
+G3_2C$V2 <- as.character(G3_2C$V2)
+G3_2C$V3 <- as.character(G3_2C$V3)
+
+G3_2C <- unique(paste(G3_2C$V1,G3_2C$V2,G3_2C$V3, sep=''))
+
+g3_2_list <- list(G3_2A, G3_2B, G3_2C)
+```
+
+```{r}
+G3_3A <- read.table(file = "G3_3A.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_3A$V1 <- as.character(G3_3A$V1)
+G3_3A$V2 <- as.character(G3_3A$V2)
+G3_3A$V3 <- as.character(G3_3A$V3)
+
+G3_3A <- unique(paste(G3_3A$V1,G3_3A$V2,G3_3A$V3, sep=''))
+
+G3_3B <- read.table(file = "G3_3B.ecc_caller_out.splitreads.bed", header=FALSE, sep='\t')
+
+G3_3B$V1 <- as.character(G3_3B$V1)
+G3_3B$V2 <- as.character(G3_3B$V2)
+G3_3B$V3 <- as.character(G3_3B$V3)
+
+G3_3B <- unique(paste(G3_3B$V1,G3_3B$V2,G3_3B$V3, sep=''))
+
+g3_3_list <- list(G3_3A, G3_3B)
+```
+
+
+```{r}
+
+p <- ggVennDiagram(x = g3_1_list, category.names=c('Tech Rep A', 'Tech Rep B', 'Tech Rep C'), set_size = 2, label_size = 2, label_alpha=0) +
+ theme(legend.position = "none") + scale_color_manual(values = c('black', 'black', 'black')) + scale_fill_gradient(low = 'white', high='white') +
+  labs(title = 'Bio Rep 1') + theme(text = element_text(size = 8))
+
+
+ggsave("venn_biorep1.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+p <- ggVennDiagram(x = g3_2_list, category.names=c('Tech Rep A', 'Tech Rep B', 'Tech Rep C'), set_size = 2, label_size = 2, label_alpha=0) +
+ theme(legend.position = "none") + scale_color_manual(values = c('black', 'black', 'black')) + scale_fill_gradient(low = 'white', high='white') +
+  labs(title = 'Bio Rep 2') + theme(text = element_text(size = 8))
+
+
+ggsave("venn_biorep2.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+p <- ggVennDiagram(x = g3_3_list, category.names=c('Tech Rep A', 'Tech Rep B'), set_size = 2, label_size = 2, label_alpha=0) +
+ theme(legend.position = "none") + scale_color_manual(values = c('black', 'black')) + scale_fill_gradient(low = 'white', high='white') +
+  labs(title = 'Bio Rep 3') + theme(text = element_text(size = 8))
+
+
+ggsave("venn_biorep3.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+```
+
+```{r}
+
+biorep1 <- c(G3_1A, G3_1B, G3_1C)
+biorep2 <- c(G3_2A, G3_2B, G3_2C)
+biorep3 <- c(G3_3A, G3_3B)
+
+all_bioreps <- list(biorep1, biorep2, biorep3)
+
+
+```
+
+```{r}
+
+p <- ggVennDiagram(x = all_bioreps, category.names=c('Bio Rep 1', 'Bio Rep 2', 'Bio Rep 3'), set_size = 2, label_size = 2, label_alpha=0) +
+ theme(legend.position = "none") + scale_color_manual(values = c('black', 'black', 'black')) + scale_fill_gradient(low = 'white', high='white') +
+  labs(title = 'All Bio Reps') + theme(text = element_text(size = 8))
+
+
+ggsave("venn_allbioreps.pdf", plot = p, width = 6.5/2, height = 6.5/2)
+
+```
+
