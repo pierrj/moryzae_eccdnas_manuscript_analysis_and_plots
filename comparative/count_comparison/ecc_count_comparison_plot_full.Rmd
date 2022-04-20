@@ -81,7 +81,7 @@ p <- ggplot(df, aes(x=organism, y=normalized_ecc_count)) +
 
 p
 
-ggsave("ecc_count_comparison_plot.pdf", plot = p, width = 3.25, height = 3.5)
+ggsave("ecc_count_comparison_plot.pdf", plot = p, width = 3.25, height = 7/3)
 
 
 ```
@@ -131,7 +131,7 @@ p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=copia_circularome_v_genome)) +
 
 p
 
-ggsave("copia_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
+ggsave("copia_element_ratios_plot.pdf", plot = p, width = 3.25, height = 7/3)
 
 
 ```
@@ -147,7 +147,7 @@ p <- ggplot(df_nohuman_noyeast, aes(x=organism, y=gypsy_circularome_v_genome)) +
 
 p
 
-ggsave("gypsy_element_ratios_plot.pdf", plot = p, width = 3.25, height = 3)
+ggsave("gypsy_element_ratios_plot.pdf", plot = p, width = 3.25, height = 7/3)
 
 
 ```
@@ -165,7 +165,7 @@ p <- ggplot(df, aes(x=organism, y=noncoding_circularome_v_genome)) +
 
 p
 
-ggsave("noncoding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
+ggsave("noncoding_ratios_plot.pdf", plot = p, width = 3.25, height = 7/3)
 
 
 ```
@@ -185,6 +185,7 @@ p
 ggsave("coding_ratios_plot.pdf", plot = p, width = 3.25, height = 3.5)
 
 ```
+
 
 
 
@@ -245,6 +246,86 @@ leg <- get_legend(p)
 my_legend <- as_ggplot(leg)
 
 ggsave('legend_horizontal.pdf', plot = leg, width = 1, height = 6)
+
+```
+
+```{r}
+## now do genome coverage of eccDNAs
+
+# read in count comparison table and rename columns
+
+df <- data.frame(fread("ecc_coverage_comparison_w_metadata.txt"))
+
+colnames(df) <-c('sample', 'genome_size', 'zero_bases',
+                 'study', 'organism', 'tissue', 'genotype', 'treatment')
+
+# renaming studies and organisms
+df$study <- sub("_", " ", df$study)
+
+df$study[df$study=='2015 Moller'] <- 'Møller et al 2015'
+df$study[df$study=='2018 Moller'] <- 'Møller et al 2018'
+df$study[df$study=='2017 Lanciano'] <- 'Lanciano et al 2017'
+df$study[df$study=='2020 Wang'] <- 'Wang et al 2021'
+
+df$study <- factor(df$study, levels = c('Møller et al 2015','Lanciano et al 2017','Møller et al 2018','Wang et al 2021','This Study'))
+
+
+df$organism <- sub("Rice_blast", "M. oryzae", df$organism)
+df$organism <- sub("Arabidopsis", "A. thaliana", df$organism)
+df$organism <- sub("Yeast", "S. cerevisiae", df$organism)
+df$organism <- sub("Human", "H. sapiens", df$organism)
+df$organism <- sub("Rice", "O. sativa", df$organism)
+df$organism <- sub("_", " ", df$organism)
+df$organism <- factor(df$organism, levels = c("M. oryzae", "H. sapiens", "S. cerevisiae", "A. thaliana", "O. sativa"))
+
+# make symbols for diffrent sample types within studies
+df$symbol <- c(rep('circle', 3), rep('triangle', 3), rep('square',2), rep('circle',9), rep('circle',16), rep('triangle',16), rep('circle',2), rep('empty',2), rep('triangle',3), rep('circle',2), rep('diamond',2), rep('circle',4), rep('square',4), rep('triangle',2), rep('diamond',2), rep('diamond',3), rep('square',3), 
+               rep('triangle',3), rep('circle',3))
+
+
+```
+
+```{r}
+
+## inverse and take percentage
+
+
+df$genome_size <- as.numeric(df$genome_size)
+df$zero_bases <- as.numeric(df$zero_bases)
+
+df$covered_bases <- (df$genome_size-df$zero_bases)/df$genome_size
+
+df$covered_bases <- df$covered_bases*100
+
+mean(df$covered_bases[df$organism == 'M. oryzae'])
+
+df$covered_bases <- log10(df$covered_bases)
+
+```
+
+```{r}
+
+# plot coverage
+
+p <- ggplot(df, aes(x=organism, y=covered_bases)) + 
+  geom_boxplot(outlier.shape = NA) + geom_jitter(position=position_jitter(0.2), aes(color=study, shape=symbol)) +
+  ylab("Percent of genome in eccDNA forming regions") + xlab("") + scale_x_discrete(labels=expression(italic("M. oryzae"), italic("H. sapiens"),
+                                                                                      italic("S. cerevisiae"), italic("A. thaliana"),
+                                                                                      italic("O. sativa")))+
+  scale_shape_manual(values=c(19,18,1,15,17)) + #shapes for sample types
+  scale_y_continuous(breaks = c(-4, -2, 0, 2), labels=c(0.001,0.01,1,100))+
+  guides(color='none', shape = "none") + coord_flip()+theme(axis.text=element_text(size=6), axis.title=element_text(size=8), legend.title=element_text(size=8))
+
+p
+
+ggsave("ecc_coverage_comparison_plot.pdf", plot = p, width = 3.25, height = 7/3)
+
+
+
+```
+```{r}
+
+mean
 
 ```
 

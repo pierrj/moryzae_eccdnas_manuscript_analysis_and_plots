@@ -102,3 +102,47 @@ gt <- tab_stubhead(gt, 'Study')
 gtsave(gt, 'ecc_datasets_metadata.png')
 
 ```
+
+
+```{r}
+
+## primer sequences
+
+primer_names <- c('actin_F', 'actin_R', 
+                  'AvrPita3_G3_1Aecc_F2', 'AvrPita3_G3_1Aecc_R2',
+                  'AvrPi9_G3_1Aecc_F1', 'AvrPi9_G3_1Aecc_R1',
+                  'AvrPi54_G3_1Aecc_F2','AvrPi54_G3_1Aecc_R2',
+                  'AvrPiz-t_G3_1Aecc_F2', 'AvrPiz-t_G3_1Aecc_R2',
+                  'Pwl4_G3_2Aecc_F2', 'Pwl4_G3_2Aecc_F2',
+                  'AvrPita1_G3_1Cecc_F1', 'AvrPita1_G3_1Cecc_R1',
+                  'TRF1_G3_1Aecc_F2', 'TRF1_G3_1Aecc_R2',
+                  'PTP2_G3_1Cecc_F2', 'PTP2_G3_1Cecc_R2'
+                  )
+
+primer_sequences <- c(
+  
+  
+  'ACAAAGCGCGGAATCAAAGC',
+  'GGTCTGTGAAGCTTGGTTCG',
+  'AGGGGGTAAGCAAAGCAGAC',
+  'TACATGGCGCGGGATGATAG',
+  'ATGCCACGCCATGCTAATTC',
+  'AGATGATGGTGGCGGTGAAC',
+  'CTTCCAAATGATGCGCCACG',
+  'ATGGCTGGATGGTGGAGAAG',
+  'CATGGCGAAAAGTTGTTGCG',
+  'CAGGTGCCCGGCTAATAAAG',
+  'TTTTATATAAGGCAAGAGTTGGGC',
+  'GGCCAAGCGACCCTAAAAAC',
+  'CGAGATGAGCAGCAGACACG',
+  'CCCCACCTACGTCTCCAAAAC',
+  'CCAGTTAGTTGTTGTGCTGAGG',
+  'AGGACCTTGTGATAACGGCG'
+  )
+
+df <- data.frame(t(data.frame(c())))
+
+colnames(df) <- c('Primer name', 'Primer sequence')
+
+```
+

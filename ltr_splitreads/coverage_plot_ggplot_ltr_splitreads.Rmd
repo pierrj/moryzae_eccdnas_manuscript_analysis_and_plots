@@ -131,7 +131,7 @@ p1 <- ggplot() +
   theme(axis.text.x = element_text(colour=c(rep(c('black','transparent'),count))))+
   theme(axis.ticks.x = element_line(colour=c(rep(c('transparent','black'),count))))+
   ylab('Normalized junction \nsplit read count')+
-  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6)) + guides(colour = guide_legend(override.aes = list(size=2)))
+  theme(axis.text=element_text(size=6),axis.title=element_text(size=8) , legend.title=element_blank(), legend.position = 'bottom', legend.text=element_text(size=6)) + guides(colour = guide_legend(override.aes = list(size=2)))+theme(legend.text =element_text(face="italic"))
 
 # should be 5000 for high res
 ggsave('ltr_test.tiff', plot=p1, width=6.5, height=2, device = 'tiff', dpi = 1000)
