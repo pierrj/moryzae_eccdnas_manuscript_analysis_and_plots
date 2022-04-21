@@ -26,9 +26,6 @@ output: html_document
 
 ```{r}
 library(gt)
-
-packageVersion('gt')
-citation('gt')
 ```
 
 ```{r}
@@ -108,7 +105,8 @@ gtsave(gt, 'ecc_datasets_metadata.png')
 
 ## primer sequences
 
-primer_names <- c('actin_F', 'actin_R', 
+primer_names <- c('MagACTqPCR3-F', 'MagACTqPCR3-R',
+                  'MagACT-F', 'MagACT-R', 
                   'AvrPita3_G3_1Aecc_F2', 'AvrPita3_G3_1Aecc_R2',
                   'AvrPi9_G3_1Aecc_F1', 'AvrPi9_G3_1Aecc_R1',
                   'AvrPi54_G3_1Aecc_F2','AvrPi54_G3_1Aecc_R2',
@@ -120,8 +118,10 @@ primer_names <- c('actin_F', 'actin_R',
                   )
 
 primer_sequences <- c(
-  
-  
+  'GTATGTGCAAGGCCGGTTTC',
+  'GCACATCTGTCGACAAACCG',
+  'TGGCACCACACCTTCTACAACG',
+  'CGCTCGTTGCCGATGGTGAT',
   'ACAAAGCGCGGAATCAAAGC',
   'GGTCTGTGAAGCTTGGTTCG',
   'AGGGGGTAAGCAAAGCAGAC',
@@ -140,9 +140,20 @@ primer_sequences <- c(
   'AGGACCTTGTGATAACGGCG'
   )
 
-df <- data.frame(t(data.frame(c())))
+df <- data.frame(primer_names, primer_sequences)
 
 colnames(df) <- c('Primer name', 'Primer sequence')
+
+
+gt <- gt(df, rowname_col = 'primer_names')
+
+gt <- cols_align(gt, align = 'center', columns = everything())
+
+gt <- cols_width(gt, everything() ~ px(500))
+
+gt <- tab_stubhead(gt, 'Study')
+
+gtsave(gt, 'primers.png')
 
 ```
 
