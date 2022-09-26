@@ -84,7 +84,12 @@ df <- data.frame(t(data.frame(c('Plasmid Mini AX (A&A Biotechnology)','Plasmid M
 
 colnames(df) <- c('DNA extraction', 'Column purification', 'Linear DNA degradation', 'Circular DNA amplification')
 
-df$rownames <- c('Moller et al 2015', 'Lanciano et al 2017', 'Moller et al 2018', 'Wang et al 2021', 'This Study (Magnaporthe oryzae)', 'This Study (Oryza sativa)')
+df$rownames <- c('Møller et al. 2015',
+                 'Lanciano et al. 2017',
+                 'Møller et al. 2018',
+                 'Wang et al. 2021',
+                 'This Study (M. oryzae)',
+                 'This Study (O. sativa)')
 
 ## just table formatting
 
@@ -96,7 +101,7 @@ gt <- cols_width(gt, everything() ~ px(150))
 
 gt <- tab_stubhead(gt, 'Study')
 
-gtsave(gt, 'ecc_datasets_metadata.png')
+gtsave(gt, 'ecc_datasets_metadata.pdf',zoom=1)
 
 ```
 
@@ -114,7 +119,10 @@ primer_names <- c('MagACTqPCR3-F', 'MagACTqPCR3-R',
                   'Pwl4_G3_2Aecc_F2', 'Pwl4_G3_2Aecc_F2',
                   'AvrPita1_G3_1Cecc_F1', 'AvrPita1_G3_1Cecc_R1',
                   'TRF1_G3_1Aecc_F2', 'TRF1_G3_1Aecc_R2',
-                  'PTP2_G3_1Cecc_F2', 'PTP2_G3_1Cecc_R2'
+                  'PTP2_G3_1Cecc_F2', 'PTP2_G3_1Cecc_R2',
+                  'MAGGY5-F', 'MAGGY5-R',
+                  'MYO1_F2', 'MYO1_R2',
+                  'actin_F2', 'actin_R2'
                   )
 
 primer_sequences <- c(
@@ -137,7 +145,13 @@ primer_sequences <- c(
   'CGAGATGAGCAGCAGACACG',
   'CCCCACCTACGTCTCCAAAAC',
   'CCAGTTAGTTGTTGTGCTGAGG',
-  'AGGACCTTGTGATAACGGCG'
+  'AGGACCTTGTGATAACGGCG',
+  'TCCTCGGACATAATGGGTGC',
+  'CGGTGCGGAAGGAAAATGC',
+  'CAGCAATGCGGTCAAAAGGG',
+  'GTGCCAGAGTGACAAACGAC',
+  'GCCGATATTGCTGCGAGTTG',
+  'ATCATTGCTCCGGGAACTGC'
   )
 
 df <- data.frame(primer_names, primer_sequences)

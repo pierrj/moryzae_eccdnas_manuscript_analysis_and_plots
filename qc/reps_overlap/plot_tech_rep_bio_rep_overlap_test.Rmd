@@ -1,0 +1,25 @@
+---
+title: "plot_tech_rep_bio_rep_overlap_test"
+output: html_document
+date: '2022-09-21'
+---
+
+```{r}
+
+df_truth <- data.frame(fread('venn_diagram_stats_out.observed.tsv', na.strings = ''))
+
+colnames(df_truth) <- c('overlap', 'biorep', 'rep1','rep2', 'rep3','rep1+2','rep2+3','rep1+3','rep1+2+3')
+
+df_0 <- df_truth[df_truth$overlap == 0,]
+df_10 <- df_truth[df_truth$overlap == 10,]
+
+```
+
+```{r}
+
+z <- names(df_10)[-c(1,2)]
+
+cbind(df_10[1], df_10[2], df_10[z] - df_0[match(df_0$biorep, df_0$biorep), z])
+
+```
+

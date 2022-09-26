@@ -1,0 +1,155 @@
+---
+#MIT License
+#
+#Copyright (c) 2021 Pierre Michel Joubert
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+title: "plot_techrep_and_biorep_overlap_v_shuffled"
+output: html_document
+date: '2022-09-20'
+---
+
+
+```{r}
+library(ggplot2)
+library(data.table)
+```
+
+```{r}
+
+df_shuffled <- data.frame(fread('venn_diagram_stats_out.shuffled_all.tsv', na.strings = ''))
+
+df_shuffled <- subset(df_shuffled, select=-c(V1))
+
+df_shuffled$type <- "Shuffled"
+
+colnames(df_shuffled) <- c('overlap', 'biorep', 'percentage', 'std', 'type')
+
+
+```
+
+```{r}
+df_truth <- data.frame(fread('venn_diagram_stats_out.observed.tsv', na.strings = ''))
+
+colnames(df_truth) <- c('overlap', 'biorep', 'rep1','rep2', 'rep3','rep1+2','rep2+3','rep1+3','rep1+2+3')
+
+df_truth$sum <- df_truth$rep1 +  df_truth$rep2 + df_truth$rep3 + df_truth$`rep1+2` + df_truth$`rep2+3` + df_truth$`rep1+3`+ df_truth$`rep1+2+3`
+df_truth$percentage <- NA
+
+df_truth[df_truth$biorep != "G3_3",]$percentage <- df_truth[df_truth$biorep != "G3_3",]$`rep1+2+3`/df_truth[df_truth$biorep != "G3_3",]$sum
+df_truth[df_truth$biorep == "G3_3",]$percentage <- df_truth[df_truth$biorep == "G3_3",]$`rep1+2`/df_truth[df_truth$biorep == "G3_3",]$sum
+
+df_truth <- subset(df_truth, select=-c(rep1,rep2, rep3,`rep1+2`,`rep2+3`,`rep1+3`,`rep1+2+3`, sum))
+
+
+df_truth$std <- 0
+  
+df_truth$type <- "Observed"
+
+
+
+```
+
+
+```{r}
+
+df <- rbind(df_truth, df_shuffled)
+
+tolerance <- factor(rep(c(
+  rep('Exact Coordinates', 4),
+  rep('Within 10 bp', 4),
+  rep('Within 50 bp', 4),
+  rep('Within 100 bp', 4),
+  rep('Within 250 bp', 4),
+  rep('Within 500 bp', 4),
+  rep('Within 1000 bp', 4)
+),2), levels = c('Exact Coordinates', 'Within 10 bp', 'Within 50 bp', 'Within 100 bp', 'Within 250 bp', 'Within 500 bp','Within 1000 bp'))
+
+df$overlap <- tolerance
+
+
+# drop within 1000bp since it doesn't add any new information
+df <- df[df$overlap != "Within 1000 bp",]
+
+# convert to actual percentage
+df$percentage <- df$percentage * 100
+
+```
+
+```{r}
+
+df_1 <- df[df$biorep == "G3_1",]
+df_2 <- df[df$biorep == "G3_2",]
+df_3 <- df[df$biorep == "G3_3",]
+df_all <- df[df$biorep == "all",]
+
+```
+
+```{r}
+
+p <- ggplot(data=df_1, aes(x=overlap, y=percentage, fill=type))+
+  geom_bar(stat='identity', position=position_dodge()) +
+  theme_classic()+theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank())+
+  ylab('Percent of eccDNA forming regions \nfound in all samples')+
+  xlab('') +
+  scale_fill_manual(values=c("black", "grey")) + coord_flip()+
+  scale_y_continuous(limits=c(0,100),breaks=c(0, 25, 50, 75,100), labels=c('0', '25', '50', '75','100'))+
+  ggtitle('Bio Rep 1')
+
+ggsave('histogram_percent_overlap_1.pdf', plot=p, width = 6.5, height = 7.5/4, device = 'pdf')
+
+
+p <- ggplot(data=df_2, aes(x=overlap, y=percentage, fill=type))+
+  geom_bar(stat='identity', position=position_dodge()) +
+  theme_classic()+theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank())+
+  ylab('Percent of eccDNA forming regions \nfound in all samples')+
+  xlab('') +
+  scale_fill_manual(values=c("black", "grey")) + coord_flip()+
+  scale_y_continuous(limits=c(0,100),breaks=c(0, 25, 50, 75,100), labels=c('0', '25', '50', '75','100'))+
+  ggtitle('Bio Rep 2')
+
+ggsave('histogram_percent_overlap_2.pdf', plot=p, width = 6.5, height = 7.5/4, device = 'pdf')
+
+
+p <- ggplot(data=df_3, aes(x=overlap, y=percentage, fill=type))+
+  geom_bar(stat='identity', position=position_dodge()) +
+  theme_classic()+theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank())+
+  ylab('Percent of eccDNA forming regions \nfound in all samples')+
+  xlab('') +
+  scale_fill_manual(values=c("black", "grey")) + coord_flip()+
+  scale_y_continuous(limits=c(0,100),breaks=c(0, 25, 50, 75,100), labels=c('0', '25', '50', '75','100'))+
+  ggtitle('Bio Rep 3')
+
+ggsave('histogram_percent_overlap_3.pdf', plot=p, width = 6.5, height = 7.5/4, device = 'pdf')
+
+
+p <- ggplot(data=df_all, aes(x=overlap, y=percentage, fill=type))+
+  geom_bar(stat='identity', position=position_dodge()) +
+  theme_classic()+theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank())+
+  ylab('Percent of eccDNA forming regions \nfound in all samples')+
+  xlab('') +
+  scale_fill_manual(values=c("black", "grey")) + coord_flip()+
+  scale_y_continuous(limits=c(0,100),breaks=c(0, 25, 50, 75,100), labels=c('0', '25', '50', '75','100'))+
+  ggtitle('All Bio Reps')
+
+ggsave('histogram_percent_overlap_all.pdf', plot=p, width = 6.5, height = 7.5/4, device = 'pdf')
+
+
+```
+
